@@ -30,15 +30,15 @@ const Footer = () => {
             <div className="space-y-2 text-gray-400">
               <p className="flex items-center gap-2">
                 <Phone className="w-4 h-4" />
-                +256 700 000 000
+               +233 53 381 1757
               </p>
               <p className="flex items-center gap-2">
                 <Mail className="w-4 h-4" />
-                info@goldenacres.com
+               goldenacresaid@gmail.com
               </p>
               <p className="flex items-center gap-2">
                 <MapPin className="w-4 h-4" />
-                Kampala, Uganda
+                Ghana,Accra
               </p>
             </div>
           </div>
