@@ -1,18 +1,16 @@
-
 import React, { Suspense } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/contexts/SupabaseAuthContext';
 import { CartProvider } from '@/hooks/useCart';
-import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { BookOpen, Loader2 } from 'lucide-react';
+import { BookOpen } from 'lucide-react';
 
 import MainLayout from '@/components/MainLayout';
 import AdminLayout from '@/components/AdminLayout';
 import ScrollToTop from '@/components/ScrollToTop';
 
-// Lazy-loaded pages
+// Lazy-loaded pages for code splitting
 const HomePage = React.lazy(() => import('@/pages/HomePage'));
 const AboutPage = React.lazy(() => import('@/pages/AboutPage'));
 const MarketplacePage = React.lazy(() => import('@/pages/MarketplacePage'));
@@ -21,6 +19,7 @@ const FarmerOnboardingPage = React.lazy(() => import('@/pages/FarmerOnboardingPa
 const LogisticsPage = React.lazy(() => import('@/pages/LogisticsPage'));
 const ContactPage = React.lazy(() => import('@/pages/ContactPage'));
 const BlogPage = React.lazy(() => import('@/pages/BlogPage'));
+const BlogPostDetailPage = React.lazy(() => import('@/pages/BlogPostDetailPage'));
 const LoginPage = React.lazy(() => import('@/pages/LoginPage'));
 const RegisterPage = React.lazy(() => import('@/pages/RegisterPage'));
 const FarmerDashboard = React.lazy(() => import('@/pages/FarmerDashboard'));
@@ -29,10 +28,31 @@ const AdminDashboard = React.lazy(() => import('@/pages/AdminDashboard'));
 const AdminUserDetailsPage = React.lazy(() => import('@/pages/AdminUserDetailsPage'));
 const CheckoutPage = React.lazy(() => import('@/pages/CheckoutPage'));
 const SuccessPage = React.lazy(() => import('@/pages/SuccessPage'));
+const MyOrdersPage = React.lazy(() => import('@/pages/MyOrdersPage'));
+const SettingsPage = React.lazy(() => import('@/pages/SettingsPage'));
+const SettingsMenuPage = React.lazy(() => import('@/pages/SettingsMenuPage'));
+const ProfileSettingsPage = React.lazy(() => import('@/pages/ProfileSettingsPage'));
+const ResetPasswordPage = React.lazy(() => import('@/pages/ResetPasswordPage'));
+const OrderTrackingPage = React.lazy(() => import('@/pages/OrderTrackingPage'));
+const FarmerProfilePage = React.lazy(() => import('@/pages/FarmerProfilePage'));
+
+// New Admin Pages
+const AdminOrdersPage = React.lazy(() => import('@/pages/admin/AdminOrdersPage'));
+const AdminProductsPage = React.lazy(() => import('@/pages/admin/AdminProductsPage'));
+const AdminUsersPage = React.lazy(() => import('@/pages/admin/AdminUsersPage'));
+const AdminFarmersPage = React.lazy(() => import('@/pages/admin/AdminFarmersPage'));
+const AdminBlogPage = React.lazy(() => import('@/pages/admin/AdminBlogPage'));
+const AdminActivityPage = React.lazy(() => import('@/pages/admin/AdminActivityPage'));
+const AdminReviewsPage = React.lazy(() => import('@/pages/admin/AdminReviewsPage'));
+
 
 const PageLoader = () => (
-    <div className="flex justify-center items-center h-[calc(100vh-8rem)]">
-        <Loader2 className="w-16 h-16 text-primary animate-spin" />
+    <div className="flex justify-center items-center h-[calc(100vh-8rem)] bg-gray-50">
+        <motion.div
+            className="fancy-loader"
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+        ></motion.div>
     </div>
 );
 
@@ -45,33 +65,45 @@ function App() {
         <CartProvider>
             <Suspense fallback={<PageLoader />}>
                 <Routes>
-                    <Route path="/admin-dashboard/*" element={
-                    <AdminLayout>
-                        <Routes>
-                        <Route index element={<AdminDashboard />} />
-                        <Route path="users/:id" element={<AdminUserDetailsPage />} />
-                        </Routes>
-                    </AdminLayout>
-                    } />
+                    <Route path="/admin-dashboard/*" element={<AdminLayout />}>
+                      <Route index element={<AdminDashboard />} />
+                      <Route path="users" element={<AdminUsersPage />} />
+                      <Route path="users/:id" element={<AdminUserDetailsPage />} />
+                      <Route path="farmers" element={<AdminFarmersPage />} />
+                      <Route path="products" element={<AdminProductsPage />} />
+                      <Route path="orders" element={<AdminOrdersPage />} />
+                      <Route path="blog" element={<AdminBlogPage />} />
+                      <Route path="activity" element={<AdminActivityPage />} />
+                      <Route path="reviews" element={<AdminReviewsPage />} />
+                    </Route>
                     <Route path="/*" element={
-                    <MainLayout>
+                      <MainLayout>
                         <Routes>
-                        <Route path="/" element={<HomePage />} />
-                        <Route path="/about" element={<AboutPage />} />
-                        <Route path="/marketplace" element={<MarketplacePage />} />
-                        <Route path="/marketplace/:id" element={<ProductDetailPage />} />
-                        <Route path="/farmer-onboarding" element={<FarmerOnboardingPage />} />
-                        <Route path="/logistics" element={<LogisticsPage />} />
-                        <Route path="/contact" element={<ContactPage />} />
-                        <Route path="/blog" element={<BlogPage />} />
-                        <Route path="/login" element={<LoginPage />} />
-                        <Route path="/register" element={<RegisterPage />} />
-                        <Route path="/farmer-dashboard" element={<FarmerDashboard />} />
-                        <Route path="/customer-dashboard" element={<CustomerDashboard />} />
-                        <Route path="/checkout" element={<CheckoutPage />} />
-                        <Route path="/success" element={<SuccessPage />} />
+                          <Route path="/" element={<HomePage />} />
+                          <Route path="/about" element={<AboutPage />} />
+                          <Route path="/marketplace" element={<MarketplacePage />} />
+                          <Route path="/marketplace/:id" element={<ProductDetailPage />} />
+                          <Route path="/farmer/:id" element={<FarmerProfilePage />} />
+                          <Route path="/farmer-onboarding" element={<FarmerOnboardingPage />} />
+                          <Route path="/logistics" element={<LogisticsPage />} />
+                          <Route path="/contact" element={<ContactPage />} />
+                          <Route path="/blog" element={<BlogPage />} />
+                          <Route path="/blog/:id" element={<BlogPostDetailPage />} />
+                          <Route path="/login" element={<LoginPage />} />
+                          <Route path="/register" element={<RegisterPage />} />
+                          <Route path="/farmer-dashboard" element={<FarmerDashboard />} />
+                          <Route path="/customer-dashboard" element={<CustomerDashboard />} />
+                          <Route path="/my-orders" element={<MyOrdersPage />} />
+                          <Route path="/track-order/:orderId" element={<OrderTrackingPage />} />
+                          <Route path="/checkout" element={<CheckoutPage />} />
+                          <Route path="/success" element={<SuccessPage />} />
+                          <Route path="/settings/*" element={<SettingsPage />}>
+                            <Route index element={<SettingsMenuPage />} />
+                            <Route path="profile" element={<ProfileSettingsPage />} />
+                            <Route path="password" element={<ResetPasswordPage />} />
+                          </Route>
                         </Routes>
-                    </MainLayout>
+                      </MainLayout>
                     } />
                 </Routes>
             </Suspense>
@@ -79,10 +111,10 @@ function App() {
           <Link to="/blog">
             <motion.div
               className="fixed bottom-6 right-6 bg-primary text-white p-4 rounded-full shadow-lg flex items-center justify-center cursor-pointer z-50"
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
+              initial={{ scale: 0, rotate: -180 }}
+              animate={{ scale: 1, rotate: 0 }}
               transition={{ type: "spring", stiffness: 260, damping: 20 }}
-              whileHover={{ scale: 1.1 }}
+              whileHover={{ scale: 1.15, rotate: 15 }}
               whileTap={{ scale: 0.9 }}
             >
               <BookOpen className="w-6 h-6" />
