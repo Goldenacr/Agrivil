@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 
 import { supabase } from '@/lib/customSupabaseClient';
@@ -58,24 +59,36 @@ export const AuthProvider = ({ children }) => {
 
   const isBanned = profile?.banned_until && new Date(profile.banned_until) > new Date();
 
+  const fetchProfile = useCallback(async (userId) => {
+    if (!userId) return null;
+    try {
+      const { data: profileData, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .single();
+      if (error) throw error;
+      setProfile(profileData);
+      return profileData;
+    } catch (error) {
+        console.error("Error fetching profile:", error);
+        return null;
+    }
+  }, []);
+
   const handleSession = useCallback(async (currentSession) => {
     setSession(currentSession);
     const currentUser = currentSession?.user ?? null;
     setUser(currentUser);
     
     if (currentUser) {
-        const { data: profileData } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', currentUser.id)
-            .single();
-        setProfile(profileData);
+        await fetchProfile(currentUser.id);
     } else {
         setProfile(null);
     }
     
     setLoading(false);
-  }, []);
+  }, [fetchProfile]);
 
   useEffect(() => {
     const getSession = async () => {
@@ -130,11 +143,24 @@ export const AuthProvider = ({ children }) => {
   }, [toast]);
   
   const signInWithGoogle = useCallback(async () => {
+    // Using window.location.origin ensures the redirect matches the current domain/subdomain exactly (including protocol)
+    // This helps prevent redirect_uri_mismatch errors if the user is on www vs non-www
+    const redirectUrl = window.location.origin; 
+    
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
+      options: {
+        // Explicitly setting redirectTo to the current origin
+        redirectTo: redirectUrl, 
+        queryParams: {
+           access_type: 'offline',
+           prompt: 'consent',
+        },
+      },
     });
 
     if (error) {
+        console.error("Google Sign-In Error:", error);
         toast({
             variant: "destructive",
             title: "Google Sign-In Failed",
@@ -167,7 +193,8 @@ export const AuthProvider = ({ children }) => {
     signIn,
     signOut,
     signInWithGoogle,
-  }), [user, session, profile, loading, isBanned, signUp, signIn, signOut, signInWithGoogle]);
+    fetchProfile,
+  }), [user, session, profile, loading, isBanned, signUp, signIn, signOut, signInWithGoogle, fetchProfile]);
 
   return (
       <AuthContext.Provider value={value}>
