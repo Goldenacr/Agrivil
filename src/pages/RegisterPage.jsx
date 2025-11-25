@@ -305,4 +305,25 @@ const RegisterPage = () => {
                                     <div><Label>GPS Location of Farm <span className="text-red-500">*</span></Label><Input value={gpsLocation} onChange={e => setGpsLocation(e.target.value)} required placeholder="e.g., 5.6037° N, 0.1870° W" /></div>
                                     <div><Label>Years of Farming Experience <span className="text-red-500">*</span></Label><Input type="number" value={farmingExperience} onChange={e => setFarmingExperience(e.target.value)} required /></div>
                                     <div><Label>Business Registration Status <span className="text-red-500">*</span></Label><Select onValueChange={setBusinessRegistrationStatus} value={businessRegistrationStatus} required><SelectTrigger><SelectValue placeholder="Select Status" /></SelectTrigger><SelectContent><SelectItem value="registered">Registered</SelectItem><SelectItem value="not_registered">Not Registered</SelectItem></SelectContent></Select></div>
-                                    <div><Label>FDA Certification Status <span className="text-red-500">*</span></Label><Select onValueChange={setFdaCertificationStatus} value={fdaCertificationStatus} required><SelectTrigger><SelectValue placeholder="Select Status" /></SelectTrigger><SelectContent><SelectItem value="certi
+                                    <div><Label>FDA Certification Status <span className="text-red-500">*</span></Label><Select onValueChange={setFdaCertificationStatus} value={fdaCertificationStatus} required><SelectTrigger><SelectValue placeholder="Select Status" /></SelectTrigger><SelectContent><SelectItem value="certiified">Certified</SelectItem><SelectItem value="not_certified">Not Certified</SelectItem><SelectItem value="in_progress">In Progress</SelectItem></SelectContent></Select></div>
+                                    <div className="sm:col-span-2"><Label>Main Products Cultivated/Reared <span className="text-red-500">*</span></Label><Input value={mainProducts} onChange={e => setMainProducts(e.target.value)} required placeholder="e.g., Maize, Yam, Poultry" /></div>
+                                    <div><Label>Preferred Delivery Method (Optional for Farmers)</Label><Select onValueChange={setPreferredDeliveryMethod} value={preferredDeliveryMethod}><SelectTrigger><SelectValue placeholder="Select Delivery Method" /></SelectTrigger><SelectContent><SelectItem value="home">Direct to Home</SelectItem><SelectItem value="hub">Hub Pickup</SelectItem></SelectContent></Select></div>
+                                </FormSection>
+                            </motion.div>
+                        )}
+                        </AnimatePresence>
+
+                        <Button type="submit" className="w-full !mt-8 bg-primary hover:bg-primary/90" disabled={loading}>{loading ? 'Registering...' : 'Create Account'}</Button>
+                    </form>
+                     <div className="relative my-6"><div className="absolute inset-0 flex items-center"><span className="w-full border-t border-gray-300" /></div><div className="relative flex justify-center text-xs uppercase"><span className="bg-card px-2 text-muted-foreground">Or</span></div></div>
+                    <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={loading}><GoogleIcon /> Sign Up with Google</Button>
+                    <p className="text-center text-sm text-gray-600 mt-6">Already have an account?{' '}<Link to="/login" className="font-medium text-primary hover:underline transition-colors duration-300">Log in here</Link></p>
+                    <p className="text-center text-sm text-gray-600">Trouble registering?{' '}<a href="https://wa.me/233557488116" target="_blank" rel="noopener noreferrer" className="font-medium text-primary hover:underline transition-colors duration-300">Contact Support</a></p>
+                </motion.div>
+            </div>
+        </>
+    );
+};
+
+export default RegisterPage;
+
