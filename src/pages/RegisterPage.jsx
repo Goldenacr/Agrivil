@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -10,6 +11,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/lib/customSupabaseClient';
 import { Home } from 'lucide-react';
+import countryData from '@/lib/countryData.json';
 
 const GoogleIcon = () => (
     <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
@@ -45,7 +47,12 @@ const RegisterPage = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [fullName, setFullName] = useState('');
+    
+    // Phone & Country
+    const [countryCode, setCountryCode] = useState('+233'); // Default Ghana
+    const [countryName, setCountryName] = useState('Ghana');
     const [phoneNumber, setPhoneNumber] = useState('');
+
     const [gender, setGender] = useState('');
     const [dateOfBirth, setDateOfBirth] = useState('');
     const [region, setRegion] = useState('');
@@ -66,9 +73,74 @@ const RegisterPage = () => {
     const [fdaCertificationStatus, setFdaCertificationStatus] = useState('');
     const [mainProducts, setMainProducts] = useState('');
 
+    const handleCountryChange = (value) => {
+        const country = countryData.find(c => c.dial_code === value);
+        setCountryCode(value);
+        if (country) setCountryName(country.name);
+    };
+
     const handleRegister = async (e) => {
         e.preventDefault();
         setLoading(true);
+
+        // Strict Validation
+        const commonFields = [
+            { val: fullName, name: "Full Name" },
+            { val: email, name: "Email" },
+            { val: password, name: "Password" },
+            { val: phoneNumber, name: "Phone Number" },
+            { val: countryCode, name: "Country Code" },
+            { val: gender, name: "Gender" },
+            { val: dateOfBirth, name: "Date of Birth" },
+            { val: region, name: "Region" },
+            { val: cityTown, name: "City/Town" },
+            { val: nearestLandmark, name: "Nearest Landmark" },
+            { val: deliveryAddress, name: "Delivery Address" },
+            { val: preferredDeliveryMethod, name: "Preferred Delivery Method" }
+        ];
+
+        const farmerFields = [
+            { val: nationalId, name: "National ID" },
+            { val: residentialAddress, name: "Residential Address" },
+            { val: district, name: "District" },
+            { val: farmAddress, name: "Farm Address" },
+            { val: farmType, name: "Farm Type" },
+            { val: farmSize, name: "Farm Size" },
+            { val: gpsLocation, name: "GPS Location" },
+            { val: farmingExperience, name: "Farming Experience" },
+            { val: businessRegistrationStatus, name: "Business Registration" },
+            { val: fdaCertificationStatus, name: "FDA Certification" },
+            { val: mainProducts, name: "Main Products" }
+        ];
+
+        // Check common fields
+        for (const field of commonFields) {
+            if (!field.val || field.val.trim() === '') {
+                toast({ variant: "destructive", title: "Missing Information", description: `${field.name} is required.` });
+                setLoading(false);
+                return;
+            }
+        }
+
+        // Check farmer specific fields
+        if (role === 'farmer') {
+            for (const field of farmerFields) {
+                if (!field.val || field.val.trim() === '') {
+                    toast({ variant: "destructive", title: "Missing Information", description: `${field.name} is required for farmers.` });
+                    setLoading(false);
+                    return;
+                }
+            }
+        }
+
+        // Check hub if pickup selected
+        if (role === 'customer' && preferredDeliveryMethod === 'hub' && !preferredHub) {
+             toast({ variant: "destructive", title: "Missing Information", description: "Please select a Preferred Hub." });
+             setLoading(false);
+             return;
+        }
+
+        const fullPhoneNumber = `${countryCode}${phoneNumber}`;
 
         const { data: existingUser } = await supabase.from('profiles').select('full_name').eq('full_name', fullName).single();
         if (existingUser) {
@@ -76,7 +148,20 @@ const RegisterPage = () => {
             setLoading(false); return;
         }
 
-        const metadata = { fullName, role, phoneNumber, gender, dateOfBirth, region, cityTown, nearestLandmark, deliveryAddress, preferredDeliveryMethod };
+        const metadata = { 
+            fullName, 
+            role, 
+            phoneNumber: fullPhoneNumber, 
+            country: countryName,
+            gender, 
+            dateOfBirth, 
+            region, 
+            cityTown, 
+            nearestLandmark, 
+            deliveryAddress, 
+            preferredDeliveryMethod 
+        };
+
         if (role === 'customer') { Object.assign(metadata, { preferredHub }); } 
         else { Object.assign(metadata, { nationalId, residentialAddress, district, farmType, farmSize, gpsLocation, farmingExperience, farmAddress, businessRegistrationStatus, fdaCertificationStatus, mainProducts }); }
 
@@ -112,38 +197,58 @@ const RegisterPage = () => {
                         <Button asChild variant="outline"><Link to="/"><Home className="h-4 w-4 mr-2" />Home</Link></Button>
                     </div>
                     <p className="mt-2 text-gray-600 text-center">Connecting You Directly to Farmers Across Ghana</p>
+                    <p className="text-center text-sm font-medium text-red-500 mb-4">* All fields are mandatory</p>
 
                     <form className="space-y-6" onSubmit={handleRegister}>
                         <motion.div initial={{opacity:0, y:10}} animate={{opacity:1, y:0}}>
-                            <Label htmlFor="role">I am registering as a...</Label>
-                             <Select onValueChange={setRole} defaultValue={role} disabled={loading}>
+                            <Label htmlFor="role">I am registering as a... <span className="text-red-500">*</span></Label>
+                             <Select onValueChange={setRole} defaultValue={role} disabled={loading} required>
                                 <SelectTrigger className="bg-white"><SelectValue placeholder="Select your role" /></SelectTrigger>
                                 <SelectContent><SelectItem value="customer">Customer</SelectItem><SelectItem value="farmer">Farmer</SelectItem></SelectContent>
                             </Select>
                         </motion.div>
 
                         <FormSection title="1. Personal Information" delay={0.1}>
-                            <div><Label>Full Name</Label><Input value={fullName} onChange={e => setFullName(e.target.value)} required placeholder="John Doe" /></div>
-                            <div><Label>Phone Number</Label><Input type="tel" value={phoneNumber} onChange={e => setPhoneNumber(e.target.value)} required placeholder="024xxxxxxx" /></div>
-                            <div><Label>Email Address</Label><Input type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="you@example.com" /></div>
-                            <div><Label>Password</Label><Input type="password" value={password} onChange={e => setPassword(e.target.value)} required placeholder="••••••••" /></div>
-                            <div><Label>Gender</Label><Select onValueChange={setGender} value={gender}><SelectTrigger><SelectValue placeholder="Select Gender" /></SelectTrigger><SelectContent><SelectItem value="male">Male</SelectItem><SelectItem value="female">Female</SelectItem></SelectContent></Select></div>
-                            <div><Label>Date of Birth</Label><Input type="date" value={dateOfBirth} onChange={e => setDateOfBirth(e.target.value)} /></div>
+                            <div><Label>Full Name <span className="text-red-500">*</span></Label><Input value={fullName} onChange={e => setFullName(e.target.value)} required placeholder="John Doe" /></div>
+                            
+                            <div>
+                                <Label>Phone Number <span className="text-red-500">*</span></Label>
+                                <div className="flex gap-2">
+                                    <Select onValueChange={handleCountryChange} defaultValue="+233" value={countryCode}>
+                                        <SelectTrigger className="w-[110px]">
+                                            <SelectValue placeholder="Code" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {countryData.map((c) => (
+                                                <SelectItem key={c.code} value={c.dial_code}>
+                                                    {c.dial_code} ({c.code})
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <Input type="tel" value={phoneNumber} onChange={e => setPhoneNumber(e.target.value)} required placeholder="550000000" className="flex-1"/>
+                                </div>
+                            </div>
+
+                            <div><Label>Email Address <span className="text-red-500">*</span></Label><Input type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="you@example.com" /></div>
+                            <div><Label>Password <span className="text-red-500">*</span></Label><Input type="password" value={password} onChange={e => setPassword(e.target.value)} required placeholder="••••••••" /></div>
+                            <div><Label>Gender <span className="text-red-500">*</span></Label><Select onValueChange={setGender} value={gender} required><SelectTrigger><SelectValue placeholder="Select Gender" /></SelectTrigger><SelectContent><SelectItem value="male">Male</SelectItem><SelectItem value="female">Female</SelectItem></SelectContent></Select></div>
+                            <div><Label>Date of Birth <span className="text-red-500">*</span></Label><Input type="date" value={dateOfBirth} onChange={e => setDateOfBirth(e.target.value)} required /></div>
                         </FormSection>
 
                         <FormSection title="2. Address & Location" delay={0.2}>
-                            <div><Label>Region</Label><Input value={region} onChange={e => setRegion(e.target.value)} placeholder="e.g., Greater Accra" /></div>
-                            <div><Label>City/Town</Label><Input value={cityTown} onChange={e => setCityTown(e.target.value)} placeholder="e.g., Accra" /></div>
-                            <div><Label>Nearest Landmark</Label><Input value={nearestLandmark} onChange={e => setNearestLandmark(e.target.value)} placeholder="e.g., Accra Mall" /></div>
-                            <div><Label>Delivery Address</Label><Input value={deliveryAddress} onChange={e => setDeliveryAddress(e.target.value)} placeholder="House No, Street Name" /></div>
+                            <div><Label>Region <span className="text-red-500">*</span></Label><Input value={region} onChange={e => setRegion(e.target.value)} required placeholder="e.g., Greater Accra" /></div>
+                            <div><Label>City/Town <span className="text-red-500">*</span></Label><Input value={cityTown} onChange={e => setCityTown(e.target.value)} required placeholder="e.g., Accra" /></div>
+                            <div><Label>Nearest Landmark <span className="text-red-500">*</span></Label><Input value={nearestLandmark} onChange={e => setNearestLandmark(e.target.value)} required placeholder="e.g., Accra Mall" /></div>
+                            <div><Label>Delivery Address <span className="text-red-500">*</span></Label><Input value={deliveryAddress} onChange={e => setDeliveryAddress(e.target.value)} required placeholder="House No, Street Name" /></div>
                         </FormSection>
                         
                         <AnimatePresence mode="wait">
                         {role === 'customer' && (
                             <motion.div key="customer" initial={{opacity:0, height: 0}} animate={{opacity:1, height: 'auto'}} exit={{opacity:0, height: 0}} transition={{duration: 0.4, ease: 'easeInOut'}}>
                                 <FormSection title="3. Account Preferences" delay={0}>
-                                    <div><Label>Preferred Delivery Method</Label><Select onValueChange={setPreferredDeliveryMethod} value={preferredDeliveryMethod}><SelectTrigger><SelectValue placeholder="Select Delivery Method" /></SelectTrigger><SelectContent><SelectItem value="home">Direct to Home</SelectItem><SelectItem value="hub">Hub Pickup</SelectItem></SelectContent></Select></div>
-                                    <div><Label>Preferred Hub</Label><Select onValueChange={setPreferredHub} value={preferredHub}><SelectTrigger><SelectValue placeholder="Select Hub" /></SelectTrigger><SelectContent><SelectItem value="madina">Madina</SelectItem><SelectItem value="bolgatanga">Bolgatanga</SelectItem><SelectItem value="ahafo">Ahafo Ano North</SelectItem><SelectItem value="lawra">Lawra</SelectItem><SelectItem value="savannah">Northern Savannah</SelectItem><SelectItem value="other">Other</SelectItem></SelectContent></Select></div>
+                                    <div><Label>Preferred Delivery Method <span className="text-red-500">*</span></Label><Select onValueChange={setPreferredDeliveryMethod} value={preferredDeliveryMethod} required><SelectTrigger><SelectValue placeholder="Select Delivery Method" /></SelectTrigger><SelectContent><SelectItem value="home">Direct to Home</SelectItem><SelectItem value="hub">Hub Pickup</SelectItem></SelectContent></Select></div>
+                                    <div><Label>Preferred Hub (Optional for Home Delivery)</Label><Select onValueChange={setPreferredHub} value={preferredHub}><SelectTrigger><SelectValue placeholder="Select Hub" /></SelectTrigger><SelectContent><SelectItem value="madina">Madina</SelectItem><SelectItem value="bolgatanga">Bolgatanga</SelectItem><SelectItem value="ahafo">Ahafo Ano North</SelectItem><SelectItem value="lawra">Lawra</SelectItem><SelectItem value="savannah">Northern Savannah</SelectItem><SelectItem value="other">Other</SelectItem></SelectContent></Select></div>
                                 </FormSection>
                             </motion.div>
                         )}
@@ -151,17 +256,17 @@ const RegisterPage = () => {
                         {role === 'farmer' && (
                             <motion.div key="farmer" initial={{opacity:0, height: 0}} animate={{opacity:1, height: 'auto'}} exit={{opacity:0, height: 0}} transition={{duration: 0.4, ease: 'easeInOut'}}>
                                 <FormSection title="Farmer Details" delay={0}>
-                                    <div><Label>National ID (Ghana Card)</Label><Input value={nationalId} onChange={e => setNationalId(e.target.value)} placeholder="GHA-000000000-0" /></div>
-                                    <div><Label>Residential Address</Label><Input value={residentialAddress} onChange={e => setResidentialAddress(e.target.value)} /></div>
-                                    <div><Label>District</Label><Input value={district} onChange={e => setDistrict(e.target.value)} /></div>
-                                    <div><Label>Farm Address</Label><Input value={farmAddress} onChange={e => setFarmAddress(e.target.value)} /></div>
-                                    <div><Label>Farm Type</Label><Input value={farmType} onChange={e => setFarmType(e.target.value)} placeholder="e.g., Crop, Livestock, Mixed" /></div>
-                                    <div><Label>Farm Size (in acres)</Label><Input value={farmSize} onChange={e => setFarmSize(e.target.value)} /></div>
-                                    <div><Label>GPS Location of Farm</Label><Input value={gpsLocation} onChange={e => setGpsLocation(e.target.value)} placeholder="e.g., 5.6037° N, 0.1870° W" /></div>
-                                    <div><Label>Years of Farming Experience</Label><Input type="number" value={farmingExperience} onChange={e => setFarmingExperience(e.target.value)} /></div>
-                                    <div><Label>Business Registration Status</Label><Select onValueChange={setBusinessRegistrationStatus} value={businessRegistrationStatus}><SelectTrigger><SelectValue placeholder="Select Status" /></SelectTrigger><SelectContent><SelectItem value="registered">Registered</SelectItem><SelectItem value="not_registered">Not Registered</SelectItem></SelectContent></Select></div>
-                                    <div><Label>FDA Certification Status</Label><Select onValueChange={setFdaCertificationStatus} value={fdaCertificationStatus}><SelectTrigger><SelectValue placeholder="Select Status" /></SelectTrigger><SelectContent><SelectItem value="certified">Certified</SelectItem><SelectItem value="not_certified">Not Certified</SelectItem><SelectItem value="in_progress">In Progress</SelectItem></SelectContent></Select></div>
-                                    <div className="sm:col-span-2"><Label>Main Products Cultivated/Reared</Label><Input value={mainProducts} onChange={e => setMainProducts(e.target.value)} placeholder="e.g., Maize, Yam, Poultry" /></div>
+                                    <div><Label>National ID (Ghana Card) <span className="text-red-500">*</span></Label><Input value={nationalId} onChange={e => setNationalId(e.target.value)} required placeholder="GHA-000000000-0" /></div>
+                                    <div><Label>Residential Address <span className="text-red-500">*</span></Label><Input value={residentialAddress} onChange={e => setResidentialAddress(e.target.value)} required /></div>
+                                    <div><Label>District <span className="text-red-500">*</span></Label><Input value={district} onChange={e => setDistrict(e.target.value)} required /></div>
+                                    <div><Label>Farm Address <span className="text-red-500">*</span></Label><Input value={farmAddress} onChange={e => setFarmAddress(e.target.value)} required /></div>
+                                    <div><Label>Farm Type <span className="text-red-500">*</span></Label><Input value={farmType} onChange={e => setFarmType(e.target.value)} required placeholder="e.g., Crop, Livestock, Mixed" /></div>
+                                    <div><Label>Farm Size (in acres) <span className="text-red-500">*</span></Label><Input value={farmSize} onChange={e => setFarmSize(e.target.value)} required /></div>
+                                    <div><Label>GPS Location of Farm <span className="text-red-500">*</span></Label><Input value={gpsLocation} onChange={e => setGpsLocation(e.target.value)} required placeholder="e.g., 5.6037° N, 0.1870° W" /></div>
+                                    <div><Label>Years of Farming Experience <span className="text-red-500">*</span></Label><Input type="number" value={farmingExperience} onChange={e => setFarmingExperience(e.target.value)} required /></div>
+                                    <div><Label>Business Registration Status <span className="text-red-500">*</span></Label><Select onValueChange={setBusinessRegistrationStatus} value={businessRegistrationStatus} required><SelectTrigger><SelectValue placeholder="Select Status" /></SelectTrigger><SelectContent><SelectItem value="registered">Registered</SelectItem><SelectItem value="not_registered">Not Registered</SelectItem></SelectContent></Select></div>
+                                    <div><Label>FDA Certification Status <span className="text-red-500">*</span></Label><Select onValueChange={setFdaCertificationStatus} value={fdaCertificationStatus} required><SelectTrigger><SelectValue placeholder="Select Status" /></SelectTrigger><SelectContent><SelectItem value="certified">Certified</SelectItem><SelectItem value="not_certified">Not Certified</SelectItem><SelectItem value="in_progress">In Progress</SelectItem></SelectContent></Select></div>
+                                    <div className="sm:col-span-2"><Label>Main Products Cultivated/Reared <span className="text-red-500">*</span></Label><Input value={mainProducts} onChange={e => setMainProducts(e.target.value)} required placeholder="e.g., Maize, Yam, Poultry" /></div>
                                 </FormSection>
                             </motion.div>
                         )}
@@ -172,11 +277,4 @@ const RegisterPage = () => {
                      <div className="relative my-6"><div className="absolute inset-0 flex items-center"><span className="w-full border-t border-gray-300" /></div><div className="relative flex justify-center text-xs uppercase"><span className="bg-card px-2 text-muted-foreground">Or</span></div></div>
                     <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={loading}><GoogleIcon /> Sign Up with Google</Button>
                     <p className="text-center text-sm text-gray-600 mt-6">Already have an account?{' '}<Link to="/login" className="font-medium text-primary hover:underline transition-colors duration-300">Log in here</Link></p>
-                    <p className="text-center text-sm text-gray-600">Trouble registering?{' '}<a href="https://wa.me/233557488116" target="_blank" rel="noopener noreferrer" className="font-medium text-primary hover:underline transition-colors duration-300">Contact Support</a></p>
-                </motion.div>
-            </div>
-        </>
-    );
-};
-
-export default RegisterPage;
+                    <p className="text-center text-sm text-gray-600">Trouble registering?{' '}<a href="https:
