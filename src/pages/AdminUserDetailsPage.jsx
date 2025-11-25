@@ -1,167 +1,153 @@
+
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { Helmet } from 'react-helmet';
+import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/customSupabaseClient';
-import { useToast } from '@/components/ui/use-toast';
-import { motion } from 'framer-motion';
-import { ArrowLeft, User, MapPin, Tractor, FileText, Loader2, Home } from 'lucide-react'; // Added Home
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ArrowLeft, Calendar, Mail, Phone, MapPin, Shield, User, ShoppingBag } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
-const FancyLoader = () => (
-  <div className="fixed inset-0 bg-card/80 backdrop-blur-sm flex items-center justify-center z-50">
-    <div className="fancy-loader"></div>
-  </div>
-);
+const AdminUserDetailsPage = () => {
+    const { id } = useParams();
+    const navigate = useNavigate();
+    const [profile, setProfile] = useState(null);
+    const [loading, setLoading] = useState(true);
 
-const DetailCard = ({ icon, title, children }) => (
-  <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.5 }}
-    className="bg-card/80 backdrop-blur-sm p-6 rounded-xl shadow-lg border"
-  >
-    <div className="flex items-center mb-4">
-      {icon}
-      <h3 className="text-xl font-semibold ml-3">{title}</h3>
-    </div>
-    <div className="space-y-3">{children}</div>
-  </motion.div>
-);
+    useEffect(() => {
+        const fetchUserProfile = async () => {
+            setLoading(true);
+            try {
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', id)
+                    .single();
 
-const DetailItem = ({ label, value }) => {
-    if (value === null || value === undefined || value === '') return null; // Hide if value is empty
+                if (error) throw error;
+                setProfile(data);
+            } catch (error) {
+                console.error("Error fetching user details:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchUserProfile();
+    }, [id]);
+
+    if (loading) {
+        return <div className="p-8 flex justify-center text-muted-foreground">Loading user details...</div>;
+    }
+
+    if (!profile) {
+        return (
+            <div className="p-8 text-center">
+                <h2 className="text-2xl font-bold text-red-600">User not found</h2>
+                <Button variant="outline" onClick={() => navigate(-1)} className="mt-4">Go Back</Button>
+            </div>
+        );
+    }
+
+    const InfoRow = ({ icon: Icon, label, value }) => (
+        <div className="flex items-start py-3 border-b last:border-0">
+            <div className="w-8 mt-1">
+                <Icon className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <div className="flex-1">
+                <p className="text-sm font-medium text-muted-foreground">{label}</p>
+                <p className="text-base text-gray-900 mt-1 font-medium">{value || 'N/A'}</p>
+            </div>
+        </div>
+    );
+
     return (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm">
-            <span className="text-gray-500 font-medium">{label}</span>
-            <span className="sm:col-span-2 text-gray-800">{value}</span>
+        <div className="container mx-auto p-6 max-w-4xl space-y-8">
+            <div className="flex items-center gap-4 mb-6">
+                <Button variant="ghost" onClick={() => navigate(-1)} className="gap-2">
+                    <ArrowLeft className="h-4 w-4" /> Back to Users
+                </Button>
+                <h1 className="text-2xl font-bold">User Details</h1>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Main Profile Card */}
+                <Card className="md:col-span-1 h-fit">
+                    <CardHeader className="text-center">
+                        <div className="mx-auto mb-4">
+                             <Avatar className="h-32 w-32 mx-auto border-4 border-white shadow-lg">
+                                <AvatarImage src={profile.avatar_url} />
+                                <AvatarFallback className="text-2xl">{profile.full_name?.[0] || 'U'}</AvatarFallback>
+                            </Avatar>
+                        </div>
+                        <CardTitle className="text-xl break-words">{profile.full_name}</CardTitle>
+                        <div className="mt-2">
+                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium uppercase tracking-wide ${
+                                profile.role === 'admin' ? 'bg-purple-100 text-purple-800' :
+                                profile.role === 'farmer' ? 'bg-green-100 text-green-800' :
+                                'bg-blue-100 text-blue-800'
+                            }`}>
+                                {profile.role}
+                            </span>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                            <Calendar className="h-4 w-4" />
+                            Joined: {new Date(profile.created_at).toLocaleDateString()}
+                        </div>
+                        <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                             <Shield className="h-4 w-4" />
+                             Status: {profile.banned_until ? 'Suspended' : 'Active'}
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* Detailed Info */}
+                <Card className="md:col-span-2">
+                    <CardHeader>
+                        <CardTitle>Registration Information</CardTitle>
+                    </CardHeader>
+                    <CardContent className="grid gap-6">
+                        <div className="space-y-1">
+                            <h3 className="font-semibold text-lg mb-4 text-primary">Personal & Contact</h3>
+                            <InfoRow icon={User} label="Full Name" value={profile.full_name} />
+                            <InfoRow icon={Mail} label="Email Address" value={profile.email} />
+                            <InfoRow icon={Phone} label="Phone Number" value={profile.phone_number} />
+                            <InfoRow icon={MapPin} label="Country" value={profile.country} />
+                            <InfoRow icon={User} label="Gender" value={profile.gender} />
+                            <InfoRow icon={Calendar} label="Date of Birth" value={profile.date_of_birth} />
+                        </div>
+
+                        <div className="space-y-1">
+                            <h3 className="font-semibold text-lg mb-4 text-primary mt-4">Location & Delivery</h3>
+                            <InfoRow icon={MapPin} label="Region" value={profile.region} />
+                            <InfoRow icon={MapPin} label="City/Town" value={profile.city_town} />
+                            <InfoRow icon={MapPin} label="Nearest Landmark" value={profile.nearest_landmark} />
+                            <InfoRow icon={MapPin} label="Delivery Address" value={profile.delivery_address} />
+                            <InfoRow icon={ShoppingBag} label="Preferred Delivery Method" value={profile.preferred_delivery_method} />
+                            {profile.preferred_hub && <InfoRow icon={MapPin} label="Preferred Hub" value={profile.preferred_hub} />}
+                        </div>
+
+                        {profile.role === 'farmer' && (
+                            <div className="space-y-1">
+                                <h3 className="font-semibold text-lg mb-4 text-primary mt-4">Farmer Details</h3>
+                                <InfoRow icon={Shield} label="National ID" value={profile.national_id} />
+                                <InfoRow icon={MapPin} label="Farm Location (GPS)" value={profile.gps_location} />
+                                <InfoRow icon={MapPin} label="Farm Address" value={profile.farm_address} />
+                                <InfoRow icon={ShoppingBag} label="Farm Type" value={profile.farm_type} />
+                                <InfoRow icon={ShoppingBag} label="Farm Size" value={`${profile.farm_size} Acres`} />
+                                <InfoRow icon={ShoppingBag} label="Main Products" value={profile.main_products} />
+                                <InfoRow icon={Calendar} label="Experience" value={`${profile.farming_experience} Years`} />
+                                <InfoRow icon={Shield} label="Business Reg. Status" value={profile.business_registration_status} />
+                                <InfoRow icon={Shield} label="FDA Cert. Status" value={profile.fda_certification_status} />
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            </div>
         </div>
     );
 };
 
-const AdminUserDetailsPage = () => {
-  const { id } = useParams();
-  const { toast } = useToast();
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-      if (error) {
-        toast({ variant: 'destructive', title: 'Error fetching user details', description: error.message });
-      } else {
-        setUser(data);
-      }
-      setLoading(false);
-    };
-    fetchUser();
-  }, [id, toast]);
-
-  if (loading) return <FancyLoader />;
-  if (!user) return (
-    <div className="text-center py-12">
-      <h2 className="text-2xl font-bold">User Not Found</h2>
-      <p className="text-gray-500 mt-2">The user you are looking for does not exist.</p>
-      <Button asChild className="mt-4">
-        <Link to="/admin-dashboard"><ArrowLeft className="mr-2 h-4 w-4" />Back to Dashboard</Link>
-      </Button>
-    </div>
-  );
-
-  return (
-    <>
-      <Helmet>
-        <title>User Details: {user.full_name} - Golden Acres</title>
-      </Helmet>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 bg-transparent">
-        <div className="flex justify-between items-center mb-6">
-            <Link to="/admin-dashboard">
-                <Button variant="ghost">
-                    <ArrowLeft className="h-4 w-4 mr-2" />
-                    Back to Dashboard
-                </Button>
-            </Link>
-            <Button asChild variant="outline">
-                <Link to="/">
-                    <Home className="h-4 w-4 mr-2" />
-                    Home
-                </Link>
-            </Button>
-        </div>
-
-        <div className="flex items-center mb-8">
-          <div className="flex-shrink-0">
-            <div className={`w-20 h-20 rounded-full flex items-center justify-center text-white text-3xl font-bold ${user.role === 'farmer' ? 'bg-primary' : 'bg-secondary'}`}>
-              {user.full_name?.charAt(0).toUpperCase()}
-            </div>
-          </div>
-          <div className="ml-5">
-            <h1 className="text-3xl font-bold">{user.full_name}</h1>
-            <p className="text-gray-600 capitalize">{user.role}</p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="space-y-8">
-            <DetailCard icon={<User className="text-primary" /> } title="Personal Information">
-              <DetailItem label="Full Name" value={user.full_name} />
-              <DetailItem label="First Name" value={user.first_name} />
-              <DetailItem label="Last Name" value={user.last_name} />
-              <DetailItem label="Phone Number" value={user.phone_number} />
-              <DetailItem label="Age" value={user.age} />
-              <DetailItem label="Gender" value={user.gender} />
-              <DetailItem label="Date of Birth" value={user.date_of_birth} />
-              <DetailItem label="National ID" value={user.national_id} />
-              <DetailItem label="Joined On" value={new Date(user.created_at).toLocaleDateString()} />
-            </DetailCard>
-
-            <DetailCard icon={<MapPin className="text-primary" />} title="Address & Location">
-              <DetailItem label="Country" value={user.country} />
-              <DetailItem label="Region" value={user.region} />
-              <DetailItem label="City/Town" value={user.city_town} />
-              <DetailItem label="District" value={user.district} />
-              <DetailItem label="Nearest Landmark" value={user.nearest_landmark} />
-              <DetailItem label="Residential Address" value={user.residential_address} />
-              <DetailItem label="Delivery Address" value={user.delivery_address} />
-            </DetailCard>
-          </div>
-          
-          {user.role === 'farmer' && (
-            <div className="space-y-8">
-                <DetailCard icon={<Tractor className="text-primary" />} title="Farm Details">
-                    <DetailItem label="Farm Address" value={user.farm_address} />
-                    <DetailItem label="Farm Type" value={user.farm_type} />
-                    <DetailItem label="Farm Size" value={user.farm_size} />
-                    <DetailItem label="GPS Location" value={user.gps_location} />
-                    <DetailItem label="Farming Experience" value={`${user.farming_experience} years`} />
-                    <DetailItem label="Main Products" value={user.main_products} />
-                </DetailCard>
-
-                <DetailCard icon={<FileText className="text-primary" />} title="Official Information">
-                    <DetailItem label="Business Registration" value={user.business_registration_status} />
-                    <DetailItem label="FDA Certification" value={user.fda_certification_status} />
-                </DetailCard>
-            </div>
-          )}
-
-          {user.role === 'customer' && (
-            <div className="space-y-8">
-                <DetailCard icon={<MapPin className="text-primary" />} title="Customer Preferences">
-                    <DetailItem label="Preferred Delivery Method" value={user.preferred_delivery_method} />
-                    <DetailItem label="Preferred Hub" value={user.preferred_hub} />
-                </DetailCard>
-            </div>
-          )}
-        </div>
-      </div>
-    </>
-  );
-};
-
 export default AdminUserDetailsPage;
+                          
