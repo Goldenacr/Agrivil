@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, memo, useCallback, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -230,7 +231,14 @@ const Navbar = () => {
           <div className="flex items-center space-x-4">
             <div className="hidden md:flex items-center space-x-4">
               {user && profile ? (
-                <DropdownMenu profile={profile} handleLogout={handleLogout} />
+                <>
+                  <DropdownMenu profile={profile} handleLogout={handleLogout} />
+                  <Link to="/settings">
+                    <Button variant="ghost" size="icon" className="text-gray-700 hover:text-primary">
+                        <Settings className="h-5 w-5" />
+                    </Button>
+                  </Link>
+                </>
               ) : (
                 <>
                   <Link to="/login">
@@ -277,3 +285,4 @@ const Navbar = () => {
 };
 
 export default Navbar;
+      
