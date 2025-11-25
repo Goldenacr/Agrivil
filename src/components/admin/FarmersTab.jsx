@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -27,8 +28,12 @@ const FarmersTab = ({ farmers, onVerify }) => {
                                     transition={{ delay: index * 0.05 }}
                                     className="bg-white hover:bg-gray-50/50"
                                 >
-                                    <td className="p-3 font-medium">{farmer.full_name}</td>
-                                    <td className="p-3 text-muted-foreground">{farmer.phone_number || farmer.email || 'N/A'}</td>
+                                    <td className="p-3 font-medium">
+                                        {farmer.full_name || <span className="text-gray-400 italic">Name Not Set</span>}
+                                    </td>
+                                    <td className="p-3 text-muted-foreground">
+                                        {farmer.phone_number || farmer.email || <span className="text-gray-400 text-xs">No contact info</span>}
+                                    </td>
                                     <td className="p-3">
                                         {farmer.is_verified
                                             ? <span className="inline-flex items-center text-green-600"><ShieldCheck className="h-4 w-4 mr-1.5" />Verified</span>
