@@ -39,7 +39,7 @@ const FormSection = ({ title, description, children, delay }) => (
 const RegisterPage = () => {
     const [role, setRole] = useState('customer');
     const [loading, setLoading] = useState(false);
-    const { signUp, signInWithGoogle } = useAuth();
+    const { signInWithGoogle } = useAuth();
     const navigate = useNavigate();
     const { toast } = useToast();
 
@@ -148,27 +148,53 @@ const RegisterPage = () => {
             setLoading(false); return;
         }
 
+        // Important: Use snake_case keys here to match database schema/trigger
         const metadata = { 
-            fullName, 
+            full_name: fullName, 
             role, 
-            phoneNumber: fullPhoneNumber, 
+            phone_number: fullPhoneNumber, 
             country: countryName,
             gender, 
-            dateOfBirth, 
+            date_of_birth: dateOfBirth, 
             region, 
-            cityTown, 
-            nearestLandmark, 
-            deliveryAddress, 
-            preferredDeliveryMethod 
+            city_town: cityTown, 
+            nearest_landmark: nearestLandmark, 
+            delivery_address: deliveryAddress, 
+            preferred_delivery_method: preferredDeliveryMethod 
         };
 
-        if (role === 'customer') { Object.assign(metadata, { preferredHub }); } 
-        else { Object.assign(metadata, { nationalId, residentialAddress, district, farmType, farmSize, gpsLocation, farmingExperience, farmAddress, businessRegistrationStatus, fdaCertificationStatus, mainProducts }); }
+        if (role === 'customer') { 
+            Object.assign(metadata, { preferred_hub: preferredHub }); 
+        } else { 
+            Object.assign(metadata, { 
+                national_id: nationalId, 
+                residential_address: residentialAddress, 
+                district, 
+                farm_type: farmType, 
+                farm_size: farmSize, 
+                gps_location: gpsLocation, 
+                farming_experience: farmingExperience, 
+                farm_address: farmAddress, 
+                business_registration_status: businessRegistrationStatus, 
+                fda_certification_status: fdaCertificationStatus, 
+                main_products: mainProducts 
+            }); 
+        }
 
-        const { error } = await signUp(email, password, { data: metadata });
+        // We use supabase.auth.signUp directly here instead of the wrapper context 
+        // to guarantee that the metadata options are passed correctly.
+        const { error } = await supabase.auth.signUp({
+            email, 
+            password, 
+            options: { data: metadata }
+        });
 
-        if (error) { toast({ variant: "destructive", title: "Registration Failed", description: error.message }); } 
-        else { toast({ title: "Registration Successful!", description: "Please check your email to verify your account." }); navigate('/'); }
+        if (error) { 
+            toast({ variant: "destructive", title: "Registration Failed", description: error.message }); 
+        } else { 
+            toast({ title: "Registration Successful!", description: "Please check your email to verify your account." }); 
+            navigate('/'); 
+        }
         setLoading(false);
     };
     
@@ -277,4 +303,11 @@ const RegisterPage = () => {
                      <div className="relative my-6"><div className="absolute inset-0 flex items-center"><span className="w-full border-t border-gray-300" /></div><div className="relative flex justify-center text-xs uppercase"><span className="bg-card px-2 text-muted-foreground">Or</span></div></div>
                     <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={loading}><GoogleIcon /> Sign Up with Google</Button>
                     <p className="text-center text-sm text-gray-600 mt-6">Already have an account?{' '}<Link to="/login" className="font-medium text-primary hover:underline transition-colors duration-300">Log in here</Link></p>
-                    <p className="text-center text-sm text-gray-600">Trouble registering?{' '}<a href="https:
+                    <p className="text-center text-sm text-gray-600">Trouble registering?{' '}<a href="https://wa.me/233557488116" target="_blank" rel="noopener noreferrer" className="font-medium text-primary hover:underline transition-colors duration-300">Contact Support</a></p>
+                </motion.div>
+            </div>
+        </>
+    );
+};
+
+export default RegisterPage;

@@ -217,4 +217,3 @@ const FarmerProfilePage = () => {
 };
 
 export default FarmerProfilePage;
-        

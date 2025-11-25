@@ -248,4 +248,3 @@ const ProfileSettingsPage = () => {
 };
 
 export default ProfileSettingsPage;
-        
