@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 
 import { supabase } from '@/lib/customSupabaseClient';
@@ -85,7 +84,6 @@ export const AuthProvider = ({ children }) => {
         let profileData = await fetchProfile(currentUser.id);
 
         // FIX: Fallback logic to ensure full_name is never "N/A" or null in the UI context
-        // This fixes issues where "My Name: N/A" appears in verification messages
         if (!profileData || !profileData.full_name || profileData.full_name === 'N/A') {
              const meta = currentUser.user_metadata || {};
              
@@ -126,15 +124,40 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const getSession = async () => {
-      const { data: { session: currentSession } } = await supabase.auth.getSession();
-      await handleSession(currentSession);
+      try {
+        const { data: { session: currentSession }, error } = await supabase.auth.getSession();
+        if (error) throw error;
+        await handleSession(currentSession);
+      } catch (error) {
+        console.error("Auth Session Error:", error);
+        // If refresh token is invalid, force sign out to clear storage to prevent crash loops
+        if (error.message && (error.message.includes("Refresh Token Not Found") || error.message.includes("json"))) {
+            await supabase.auth.signOut();
+            setSession(null);
+            setUser(null);
+            setProfile(null);
+        }
+        setLoading(false);
+      }
     };
 
     getSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
-        await handleSession(newSession);
+        if (event === 'TOKEN_REFRESH_GENERATED_ERROR') {
+            console.warn('Token refresh failed, signing out to clear stale session');
+            await supabase.auth.signOut();
+            setSession(null);
+            setUser(null);
+            setProfile(null);
+        } else if (event === 'SIGNED_OUT') {
+            setSession(null);
+            setUser(null);
+            setProfile(null);
+        } else {
+            await handleSession(newSession);
+        }
       }
     );
 
@@ -242,4 +265,3 @@ export const useAuth = () => {
   }
   return context;
 };
-            
