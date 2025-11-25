@@ -29,7 +29,7 @@ const FarmersTab = ({ farmers, onVerify }) => {
                                     className="bg-white hover:bg-gray-50/50"
                                 >
                                     <td className="p-3 font-medium">
-                                        {farmer.full_name || <span className="text-gray-400 italic">Name Not Set</span>}
+                                        {farmer.full_name && farmer.full_name !== 'N/A' ? farmer.full_name : <span className="text-gray-400 italic">Name Not Set</span>}
                                     </td>
                                     <td className="p-3 text-muted-foreground">
                                         {farmer.phone_number || farmer.email || <span className="text-gray-400 text-xs">No contact info</span>}
