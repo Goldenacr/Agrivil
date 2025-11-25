@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useToast } from '@/components/ui/use-toast';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2, Save, Edit2, Phone, Cake, VenetianMask, MapPin, Truck, Navigation, Building, Mail } from 'lucide-react';
+import { Loader2, Save, Edit2, Phone, Cake, VenetianMask, MapPin, Truck, Navigation, Building, Mail, Shield, Warehouse, Sprout } from 'lucide-react';
 import AvatarSelection from '@/components/settings/AvatarSelection';
 import ProfileEditDialog from '@/components/settings/ProfileEditDialog';
 import { Input } from '@/components/ui/input';
@@ -22,7 +23,7 @@ const ProfileItem = ({ icon, label, value, action }) => (
             {React.cloneElement(icon, { className: "h-5 w-5 text-muted-foreground" })}
             <div>
                 <p className="text-sm text-muted-foreground">{label}</p>
-                <p className="font-medium text-sm">{value || 'Not set'}</p>
+                <p className="font-medium text-sm break-all">{value || 'Not set'}</p>
             </div>
         </div>
         {action && (
@@ -42,13 +43,13 @@ const ProfileSettingsPage = () => {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [currentField, setCurrentField] = useState(null);
 
-    const [nickname, setNickname] = useState('');
+    const [fullName, setFullName] = useState('');
     const [avatarLoading, setAvatarLoading] = useState(false);
-    const [nicknameLoading, setNicknameLoading] = useState(false);
+    const [nameLoading, setNameLoading] = useState(false);
 
     useEffect(() => {
         if (profile) {
-            setNickname(profile.full_name || '');
+            setFullName(profile.full_name || '');
         }
     }, [profile]);
     
@@ -101,21 +102,21 @@ const ProfileSettingsPage = () => {
         }
     };
     
-    const handleNicknameSave = async () => {
-        if (!nickname || nickname === profile.full_name) return;
-        setNicknameLoading(true);
+    const handleNameSave = async () => {
+        if (!fullName || fullName === profile.full_name) return;
+        setNameLoading(true);
         const { error } = await supabase
             .from('profiles')
-            .update({ full_name: nickname })
+            .update({ full_name: fullName })
             .eq('id', user.id);
 
         if (error) {
-            toast({ variant: 'destructive', title: 'Failed to update nickname', description: error.message });
+            toast({ variant: 'destructive', title: 'Failed to update name', description: error.message });
         } else {
             await fetchProfile(user.id);
-            toast({ title: 'Nickname updated successfully!' });
+            toast({ title: 'Name updated successfully!' });
         }
-        setNicknameLoading(false);
+        setNameLoading(false);
     };
 
     if (!profile) {
@@ -136,9 +137,16 @@ const ProfileSettingsPage = () => {
         delivery_address: { label: 'Delivery Address', name: 'delivery_address', type: 'text' },
         preferred_delivery_method: { label: 'Delivery Method', name: 'preferred_delivery_method', type: 'select', options: [{value: 'Home Delivery', label: 'Home Delivery'}, {value: 'Pickup Point', label: 'Pickup Point'}] },
         preferred_hub: { label: 'Preferred Hub', name: 'preferred_hub', type: 'text' },
+        // Farmer fields
+        national_id: { label: 'National ID', name: 'national_id', type: 'text' },
+        farm_type: { label: 'Farm Type', name: 'farm_type', type: 'text' },
+        farm_size: { label: 'Farm Size (Acres)', name: 'farm_size', type: 'text' },
+        farm_address: { label: 'Farm Address', name: 'farm_address', type: 'text' },
+        gps_location: { label: 'GPS Location', name: 'gps_location', type: 'text' },
+        main_products: { label: 'Main Products', name: 'main_products', type: 'text' },
     };
 
-    const isNicknameChanged = nickname !== (profile.full_name || '');
+    const isNameChanged = fullName !== (profile.full_name || '');
 
     return (
         <AnimatePresence>
@@ -165,21 +173,27 @@ const ProfileSettingsPage = () => {
                             {avatarLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Edit2 className="h-4 w-4" />}
                         </Button>
                     </div>
-                    <div className="flex-grow">
+                    <div className="flex-grow w-full sm:w-auto">
                         <div className="flex items-center gap-2">
-                            <Input 
-                                id="nickname" 
-                                value={nickname} 
-                                onChange={e => setNickname(e.target.value)}
-                                className="text-xl font-semibold border-0 shadow-none p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent"
-                            />
-                            {isNicknameChanged && (
-                                <Button size="sm" variant="ghost" onClick={handleNicknameSave} disabled={nicknameLoading}>
-                                    {nicknameLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                                </Button>
-                            )}
+                            <div className="flex-grow max-w-md">
+                                <label htmlFor="fullName" className="text-xs text-muted-foreground block mb-1">Full Name (Editable)</label>
+                                <div className="flex gap-2">
+                                    <Input 
+                                        id="fullName" 
+                                        value={fullName} 
+                                        onChange={e => setFullName(e.target.value)}
+                                        className="text-xl font-semibold h-10 border-2 border-transparent hover:border-gray-200 focus:border-primary transition-all px-2 bg-transparent"
+                                    />
+                                    {isNameChanged && (
+                                        <Button size="icon" onClick={handleNameSave} disabled={nameLoading}>
+                                            {nameLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                                        </Button>
+                                    )}
+                                </div>
+                            </div>
                         </div>
-                        <p className="text-sm text-muted-foreground flex items-center gap-1"><Mail className="h-3 w-3"/> {user.email}</p>
+                        <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1"><Mail className="h-3 w-3"/> {user.email}</p>
+                        {profile.country && <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1"><MapPin className="h-3 w-3"/> {profile.country}</p>}
                     </div>
                 </CardHeader>
                 <CardContent className="p-0">
@@ -198,6 +212,18 @@ const ProfileSettingsPage = () => {
                     <ProfileItem icon={<MapPin />} label="Delivery Address" value={profile.delivery_address} action={() => openEditModal(fields.delivery_address)} />
                     {profile.preferred_delivery_method === 'Pickup Point' && (
                         <ProfileItem icon={<Building />} label="Preferred Hub" value={profile.preferred_hub} action={() => openEditModal(fields.preferred_hub)} />
+                    )}
+
+                    {profile.role === 'farmer' && (
+                        <>
+                            <div className="bg-gray-50 px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-t">Farmer Information</div>
+                            <ProfileItem icon={<Shield />} label="National ID" value={profile.national_id} action={() => openEditModal(fields.national_id)} />
+                            <ProfileItem icon={<Sprout />} label="Farm Type" value={profile.farm_type} action={() => openEditModal(fields.farm_type)} />
+                            <ProfileItem icon={<Warehouse />} label="Farm Size" value={`${profile.farm_size} Acres`} action={() => openEditModal(fields.farm_size)} />
+                            <ProfileItem icon={<MapPin />} label="Farm Address" value={profile.farm_address} action={() => openEditModal(fields.farm_address)} />
+                            <ProfileItem icon={<Navigation />} label="GPS Location" value={profile.gps_location} action={() => openEditModal(fields.gps_location)} />
+                            <ProfileItem icon={<Sprout />} label="Main Products" value={profile.main_products} action={() => openEditModal(fields.main_products)} />
+                        </>
                     )}
                 </CardContent>
             </Card>
@@ -222,3 +248,4 @@ const ProfileSettingsPage = () => {
 };
 
 export default ProfileSettingsPage;
+        
