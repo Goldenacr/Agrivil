@@ -9,6 +9,7 @@
     "preview": "vite preview --host :: --port 3000"
   },
   "dependencies": {
+    "@hookform/resolvers": "^3.3.2",
     "@radix-ui/react-alert-dialog": "^1.0.5",
     "@radix-ui/react-avatar": "^1.0.3",
     "@radix-ui/react-checkbox": "^1.0.4",
@@ -32,9 +33,11 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-helmet": "^6.1.0",
+    "react-hook-form": "^7.47.0",
     "react-router-dom": "^6.16.0",
     "tailwind-merge": "^1.14.0",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "zod": "^3.22.4"
   },
   "devDependencies": {
     "@babel/generator": "^7.27.0",
