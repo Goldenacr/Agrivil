@@ -11,7 +11,17 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Plus, Trash2, Edit, Package, Loader2 } from 'lucide-react';
+import { 
+    AlertDialog, 
+    AlertDialogAction, 
+    AlertDialogCancel, 
+    AlertDialogContent, 
+    AlertDialogDescription, 
+    AlertDialogFooter, 
+    AlertDialogHeader, 
+    AlertDialogTitle 
+} from "@/components/ui/alert-dialog";
+import { Plus, Trash2, Edit, Package, Loader2, AlertTriangle } from 'lucide-react';
 import ImageUpload from '@/components/admin/ImageUpload';
 
 const FarmerDashboard = () => {
@@ -21,8 +31,12 @@ const FarmerDashboard = () => {
     const [loading, setLoading] = useState(true);
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    
+    // Delete Confirmation State
+    const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
+    const [productToDelete, setProductToDelete] = useState(null);
 
-    // Product Form State - lifted here to persist during modal life
+    // Product Form State
     const [editingProduct, setEditingProduct] = useState(null);
     const [formData, setFormData] = useState({
         name: '',
@@ -90,8 +104,6 @@ const FarmerDashboard = () => {
     };
 
     const handleFileChange = (file) => {
-        // State update here does NOT reset the other form fields because formData is a single object
-        // and we merge the previous state.
         setFormData(prev => ({ ...prev, imageFile: file }));
     };
 
@@ -105,7 +117,7 @@ const FarmerDashboard = () => {
     };
 
     const handleSubmit = async (e) => {
-        e.preventDefault(); // Prevent page refresh
+        e.preventDefault();
         setIsSubmitting(true);
 
         try {
@@ -116,6 +128,7 @@ const FarmerDashboard = () => {
                 const fileName = `${Math.random()}.${fileExt}`;
                 const filePath = `${user.id}/${fileName}`;
 
+                // Upload without strict size limits (supabase bucket config handles max size if any)
                 const { error: uploadError } = await supabase.storage
                     .from('product_images')
                     .upload(filePath, formData.imageFile);
@@ -165,17 +178,24 @@ const FarmerDashboard = () => {
         }
     };
 
-    const handleDeleteProduct = async (id) => {
-        // Fixed: unexpected use of 'confirm' by using window.confirm
-        if (!window.confirm("Are you sure you want to delete this product?")) return;
+    const initiateDelete = (product) => {
+        setProductToDelete(product);
+        setIsDeleteAlertOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!productToDelete) return;
 
         try {
-            const { error } = await supabase.from('products').delete().eq('id', id);
+            const { error } = await supabase.from('products').delete().eq('id', productToDelete.id);
             if (error) throw error;
-            toast({ title: "Deleted", description: "Product removed." });
+            toast({ title: "Deleted", description: `${productToDelete.name} has been removed.` });
             fetchProducts();
         } catch (error) {
             toast({ variant: "destructive", title: "Error", description: "Could not delete product." });
+        } finally {
+            setIsDeleteAlertOpen(false);
+            setProductToDelete(null);
         }
     };
 
@@ -190,15 +210,15 @@ const FarmerDashboard = () => {
                     <h1 className="text-3xl font-bold text-gray-900">Farmer Dashboard</h1>
                     <p className="text-gray-600 mt-1">Manage your farm products and view orders.</p>
                 </div>
-                <Button onClick={() => handleOpenModal()} className="bg-green-600 hover:bg-green-700">
+                <Button onClick={() => handleOpenModal()} className="bg-green-600 hover:bg-green-700 shadow-lg shadow-green-200">
                     <Plus className="h-4 w-4 mr-2" /> Add New Product
                 </Button>
             </div>
 
             {/* Dashboard Content */}
-            <div className="bg-white rounded-lg shadow">
-                <div className="p-6 border-b border-gray-200">
-                    <h2 className="text-xl font-semibold text-gray-800 flex items-center">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div className="p-6 border-b border-gray-100 bg-gray-50/50">
+                    <h2 className="text-xl font-bold text-gray-800 flex items-center">
                         <Package className="mr-2 h-5 w-5 text-green-600" /> My Products
                     </h2>
                 </div>
@@ -209,41 +229,61 @@ const FarmerDashboard = () => {
                     </div>
                 ) : products.length === 0 ? (
                     <div className="p-12 text-center text-gray-500">
-                        <p>You haven't uploaded any products yet.</p>
-                        <Button variant="link" onClick={() => handleOpenModal()} className="mt-2">Upload your first product</Button>
+                        <div className="bg-green-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                             <Package className="h-8 w-8 text-green-600" />
+                        </div>
+                        <h3 className="text-lg font-medium text-gray-900">No products yet</h3>
+                        <p className="mt-1">Get started by adding your first farm produce.</p>
+                        <Button variant="link" onClick={() => handleOpenModal()} className="mt-2 text-green-600">Upload your first product</Button>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 p-6">
                         {products.map(product => (
                             <motion.div 
                                 key={product.id} 
                                 initial={{ opacity: 0, y: 10 }} 
                                 animate={{ opacity: 1, y: 0 }}
-                                className="bg-white border rounded-lg overflow-hidden hover:shadow-md transition-shadow"
+                                className="bg-white border border-gray-100 rounded-2xl overflow-hidden hover:shadow-lg transition-all duration-300 group"
                             >
-                                <div className="relative h-48 bg-gray-100">
+                                <div className="relative h-52 bg-gray-100 overflow-hidden">
                                     {product.image_url ? (
-                                        <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
+                                        <img 
+                                            src={product.image_url} 
+                                            alt={product.name} 
+                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                                        />
                                     ) : (
                                         <div className="flex items-center justify-center h-full text-gray-400">No Image</div>
                                     )}
-                                    <div className="absolute top-2 right-2 flex gap-2">
-                                        <Button size="icon" variant="secondary" className="h-8 w-8 bg-white/80 hover:bg-white" onClick={() => handleOpenModal(product)}>
+                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
+                                    <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                        <Button size="icon" variant="secondary" className="h-8 w-8 bg-white/90 hover:bg-white shadow-sm" onClick={() => handleOpenModal(product)}>
                                             <Edit className="h-4 w-4 text-blue-600" />
                                         </Button>
-                                        <Button size="icon" variant="destructive" className="h-8 w-8" onClick={() => handleDeleteProduct(product.id)}>
+                                        <Button size="icon" variant="destructive" className="h-8 w-8 shadow-sm" onClick={() => initiateDelete(product)}>
                                             <Trash2 className="h-4 w-4" />
                                         </Button>
                                     </div>
                                 </div>
                                 <div className="p-4">
-                                    <h3 className="font-semibold text-lg text-gray-900">{product.name}</h3>
-                                    <p className="text-sm text-gray-500 mb-2">{product.category}</p>
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-green-600 font-bold">₵{product.price} / {product.unit}</span>
-                                        <span className={`text-sm ${product.stock > 0 ? 'text-gray-600' : 'text-red-500'}`}>
-                                            {product.stock > 0 ? `${product.stock} in stock` : 'Out of stock'}
-                                        </span>
+                                    <div className="flex justify-between items-start mb-2">
+                                        <div>
+                                            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 mb-2 inline-block">{product.category}</span>
+                                            <h3 className="font-bold text-gray-900 line-clamp-1">{product.name}</h3>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="flex justify-between items-end mt-3">
+                                        <div>
+                                            <p className="text-xs text-gray-500 mb-0.5">Price</p>
+                                            <span className="text-green-700 font-bold text-lg">₵{product.price} <span className="text-xs font-normal text-gray-500">/ {product.unit}</span></span>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-xs text-gray-500 mb-0.5">Stock</p>
+                                            <span className={`text-sm font-medium ${product.stock > 0 ? 'text-gray-700' : 'text-red-500'}`}>
+                                                {product.stock > 0 ? product.stock : 'Out'}
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                             </motion.div>
@@ -251,6 +291,30 @@ const FarmerDashboard = () => {
                     </div>
                 )}
             </div>
+
+            {/* Delete Confirmation Dialog */}
+            <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
+                <AlertDialogContent className="rounded-2xl">
+                    <AlertDialogHeader>
+                        <div className="mx-auto w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mb-4">
+                            <AlertTriangle className="h-6 w-6 text-red-600" />
+                        </div>
+                        <AlertDialogTitle className="text-center text-xl">Delete Product?</AlertDialogTitle>
+                        <AlertDialogDescription className="text-center">
+                            Are you sure you want to delete <span className="font-semibold text-gray-900">{productToDelete?.name}</span>? This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="sm:justify-center gap-2">
+                        <AlertDialogCancel className="rounded-full px-6">Cancel</AlertDialogCancel>
+                        <AlertDialogAction 
+                            onClick={confirmDelete} 
+                            className="bg-red-600 hover:bg-red-700 rounded-full px-6"
+                        >
+                            Yes, Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
 
             {/* Product Modal */}
             <Dialog open={isProductModalOpen} onOpenChange={setIsProductModalOpen}>
@@ -308,7 +372,7 @@ const FarmerDashboard = () => {
                         </div>
 
                         <div className="space-y-2">
-                            <Label>Product Image</Label>
+                            <Label>Product Image (Any size allowed)</Label>
                             <ImageUpload 
                                 imageFile={formData.imageFile} 
                                 onFileChange={handleFileChange} 
@@ -331,4 +395,4 @@ const FarmerDashboard = () => {
 };
 
 export default FarmerDashboard;
-      
+                
