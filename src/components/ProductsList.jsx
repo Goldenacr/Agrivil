@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, memo } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useParams, useLocation } from 'react-router-dom';
@@ -7,7 +8,7 @@ import { supabase } from '@/lib/customSupabaseClient';
 import { useToast } from "@/components/ui/use-toast";
 import { Loader2, ShoppingCart, Star } from 'lucide-react';
 
-// Individual Product Card Component in Horizontal Layout
+// Individual Product Card Component in Vertical Layout
 const ProductCard = memo(({ product }) => {
     const { addToCart } = useCart();
 
@@ -24,67 +25,64 @@ const ProductCard = memo(({ product }) => {
     return (
         <motion.div
             layout
-            className="bg-white rounded-xl border border-gray-100 overflow-hidden hover:shadow-md transition-all duration-300 mb-3"
+            className="group bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col h-full"
         >
-            <Link to={`/marketplace/${product.id}`} className="flex flex-row h-32 sm:h-40">
-                {/* Image Section - Left Side (approx 30%) */}
-                <div className="relative w-[30%] sm:w-[25%] md:w-[20%] bg-gray-50 flex-shrink-0 border-r border-gray-100">
+            <Link to={`/marketplace/${product.id}`} className="flex flex-col flex-grow">
+                {/* Image Section - Top */}
+                <div className="relative w-full h-48 sm:h-56 bg-gray-100 overflow-hidden">
                     <motion.img
                         src={product.image_url || 'https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=400'}
                         alt={product.name}
-                        className="h-full w-full object-cover"
-                        whileHover={{ scale: 1.05 }}
-                        transition={{ duration: 0.5 }}
+                        className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-500"
                     />
                      {isOutOfStock && (
                         <div className="absolute inset-0 bg-black/40 flex items-center justify-center backdrop-blur-[1px]">
-                             <span className="text-white font-bold text-xs tracking-wider uppercase border border-white px-2 py-1 rounded">Sold Out</span>
+                             <span className="text-white font-bold text-xs tracking-wider uppercase border border-white px-3 py-1.5 rounded-full">Sold Out</span>
                         </div>
                     )}
                 </div>
 
-                {/* Content Section - Right Side (approx 70%) */}
-                <div className="p-3 sm:p-4 flex flex-col justify-between flex-grow w-[70%] sm:w-[75%] md:w-[80%]">
-                    <div className="flex justify-between items-start gap-2">
-                         <div className="space-y-1 w-full">
-                            {/* Product Name */}
-                            <h3 className="text-sm sm:text-base font-semibold text-gray-900 leading-tight line-clamp-2">
+                {/* Content Section - Bottom */}
+                <div className="p-4 flex flex-col flex-grow justify-between">
+                    <div className="space-y-2 mb-4">
+                        <div className="flex justify-between items-start">
+                             <h3 className="text-base font-bold text-gray-900 line-clamp-2 leading-tight group-hover:text-primary transition-colors">
                                 {product.name}
                             </h3>
-                             
-                             {/* Price */}
-                            <div className="text-lg font-bold text-gray-900">
-                                GHS {price}
-                            </div>
                         </div>
+                        <p className="text-xs text-gray-500 line-clamp-1">{product.category || 'Fresh Produce'}</p>
                     </div>
 
-                    <div className="flex items-end justify-between mt-2">
-                        {/* Ratings and Orders */}
-                        <div className="flex flex-col gap-0.5">
-                            {product.average_rating > 0 && (
-                                <div className="flex items-center gap-1">
-                                     <div className="flex text-orange-400">
-                                         {[...Array(5)].map((_, i) => (
-                                             <Star key={i} className={`w-3 h-3 ${i < Math.round(product.average_rating) ? "fill-current" : "text-gray-200"}`} />
-                                         ))}
-                                     </div>
-                                     <span className="text-xs text-gray-500">{Number(product.average_rating).toFixed(1)}</span>
-                                </div>
-                            )}
-                            <span className="text-xs text-gray-400">{product.total_orders || 0} orders</span>
-                        </div>
+                    <div className="space-y-3 mt-auto">
+                         <div className="flex items-center justify-between">
+                            <div className="text-lg font-extrabold text-primary">
+                                GHS {price}
+                                <span className="text-xs font-normal text-gray-400 ml-1">/ {product.unit}</span>
+                            </div>
+                         </div>
 
-                         {/* Add to Cart Action */}
-                         <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-8 w-8 p-0 rounded-full bg-gray-100 hover:bg-orange-100 text-gray-600 hover:text-orange-600"
-                            onClick={handleAddToCart}
-                            disabled={isOutOfStock}
-                         >
-                             <ShoppingCart className="h-4 w-4" />
-                         </Button>
+                        <div className="flex items-center justify-between pt-3 border-t border-gray-50">
+                            <div className="flex items-center gap-1">
+                                 {product.average_rating > 0 ? (
+                                     <>
+                                        <Star className="w-3.5 h-3.5 fill-orange-400 text-orange-400" />
+                                        <span className="text-xs font-bold text-gray-700">{Number(product.average_rating).toFixed(1)}</span>
+                                        <span className="text-[10px] text-gray-400">({product.total_reviews || 0})</span>
+                                     </>
+                                 ) : (
+                                    <span className="text-[10px] text-gray-400">No ratings yet</span>
+                                 )}
+                            </div>
+                            
+                            <Button
+                                size="icon"
+                                className={`h-8 w-8 rounded-full shadow-sm transition-colors ${isOutOfStock ? 'bg-gray-100 text-gray-400' : 'bg-gray-900 text-white hover:bg-primary'}`}
+                                onClick={handleAddToCart}
+                                disabled={isOutOfStock}
+                            >
+                                <ShoppingCart className="h-4 w-4" />
+                            </Button>
+                        </div>
                     </div>
                 </div>
             </Link>
@@ -145,8 +143,8 @@ const ProductsList = memo(() => {
 
     if (loading) {
         return (
-            <div className="text-center py-20 flex justify-center items-center flex-col">
-                <Loader2 className="h-10 w-10 animate-spin text-orange-500 mb-4" />
+            <div className="text-center py-20 flex justify-center items-center flex-col min-h-[300px]">
+                <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
                 <span className="text-gray-500 font-medium">Loading fresh produce...</span>
             </div>
         );
@@ -156,7 +154,7 @@ const ProductsList = memo(() => {
         return (
              <div className="text-center py-20 bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200">
                 <p className="text-xl text-gray-500 font-medium">No products available.</p>
-                <p className="text-gray-400 mt-2">This farmer hasn't listed any products yet.</p>
+                <p className="text-gray-400 mt-2">Check back later for fresh harvest!</p>
             </div>
         );
     }
@@ -171,7 +169,7 @@ const ProductsList = memo(() => {
 
     return (
         <motion.div
-            className="flex flex-col w-full max-w-2xl mx-auto"
+            className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6"
             variants={containerVariants}
             initial="hidden"
             animate="visible"
@@ -184,3 +182,4 @@ const ProductsList = memo(() => {
 });
 
 export default ProductsList;
+                                                                                               
