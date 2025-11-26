@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useToast } from '@/components/ui/use-toast';
@@ -21,7 +21,7 @@ import {
     AlertDialogHeader, 
     AlertDialogTitle 
 } from "@/components/ui/alert-dialog";
-import { Plus, Trash2, Edit, Package, Loader2, AlertTriangle } from 'lucide-react';
+import { Plus, Trash2, Edit, Package, Loader2, Search } from 'lucide-react';
 import ImageUpload from '@/components/admin/ImageUpload';
 
 const FarmerDashboard = () => {
@@ -29,14 +29,15 @@ const FarmerDashboard = () => {
     const { toast } = useToast();
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [searchTerm, setSearchTerm] = useState('');
+    
+    // Modal States
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    
-    // Delete Confirmation State
     const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
     const [productToDelete, setProductToDelete] = useState(null);
 
-    // Product Form State
+    // Form State
     const [editingProduct, setEditingProduct] = useState(null);
     const [formData, setFormData] = useState({
         name: '',
@@ -128,7 +129,6 @@ const FarmerDashboard = () => {
                 const fileName = `${Math.random()}.${fileExt}`;
                 const filePath = `${user.id}/${fileName}`;
 
-                // Upload without strict size limits (supabase bucket config handles max size if any)
                 const { error: uploadError } = await supabase.storage
                     .from('product_images')
                     .upload(filePath, formData.imageFile);
@@ -189,7 +189,7 @@ const FarmerDashboard = () => {
         try {
             const { error } = await supabase.from('products').delete().eq('id', productToDelete.id);
             if (error) throw error;
-            toast({ title: "Deleted", description: `${productToDelete.name} has been removed.` });
+            toast({ title: "Deleted", description: "Product removed." });
             fetchProducts();
         } catch (error) {
             toast({ variant: "destructive", title: "Error", description: "Could not delete product." });
@@ -199,124 +199,157 @@ const FarmerDashboard = () => {
         }
     };
 
+    const filteredProducts = products.filter(p => 
+        p.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
     return (
         <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8 min-h-screen bg-gray-50">
             <Helmet>
                 <title>Farmer Dashboard - Golden Acres</title>
             </Helmet>
 
+            {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Farmer Dashboard</h1>
-                    <p className="text-gray-600 mt-1">Manage your farm products and view orders.</p>
+                    <h1 className="text-3xl font-bold text-gray-900">Your Products</h1>
+                    <p className="text-gray-600 mt-1">Manage and track your farm produce.</p>
                 </div>
-                <Button onClick={() => handleOpenModal()} className="bg-green-600 hover:bg-green-700 shadow-lg shadow-green-200">
-                    <Plus className="h-4 w-4 mr-2" /> Add New Product
+                <Button onClick={() => handleOpenModal()} className="bg-orange-500 hover:bg-orange-600 text-white shadow-lg">
+                    <Plus className="h-4 w-4 mr-2" /> Add Product
                 </Button>
             </div>
 
-            {/* Dashboard Content */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <div className="p-6 border-b border-gray-100 bg-gray-50/50">
-                    <h2 className="text-xl font-bold text-gray-800 flex items-center">
-                        <Package className="mr-2 h-5 w-5 text-green-600" /> My Products
-                    </h2>
+            {/* Search and Filter */}
+            <div className="mb-6">
+                <div className="relative max-w-md">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input 
+                        placeholder="Search by product name..." 
+                        className="pl-10 bg-white border-gray-200"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
                 </div>
-                
+            </div>
+
+            {/* Product Grid */}
+            <div className="min-h-[400px]">
                 {loading ? (
-                    <div className="p-12 flex justify-center">
+                    <div className="flex justify-center items-center h-64">
                         <Loader2 className="h-8 w-8 animate-spin text-green-600" />
                     </div>
-                ) : products.length === 0 ? (
-                    <div className="p-12 text-center text-gray-500">
-                        <div className="bg-green-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                             <Package className="h-8 w-8 text-green-600" />
+                ) : filteredProducts.length === 0 ? (
+                    <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-gray-200">
+                        <Package className="mx-auto h-12 w-12 text-gray-300" />
+                        <h3 className="mt-2 text-sm font-semibold text-gray-900">No products</h3>
+                        <p className="mt-1 text-sm text-gray-500">Get started by creating a new product.</p>
+                        <div className="mt-6">
+                            <Button onClick={() => handleOpenModal()} variant="outline">
+                                <Plus className="h-4 w-4 mr-2" />
+                                Add Product
+                            </Button>
                         </div>
-                        <h3 className="text-lg font-medium text-gray-900">No products yet</h3>
-                        <p className="mt-1">Get started by adding your first farm produce.</p>
-                        <Button variant="link" onClick={() => handleOpenModal()} className="mt-2 text-green-600">Upload your first product</Button>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 p-6">
-                        {products.map(product => (
-                            <motion.div 
-                                key={product.id} 
-                                initial={{ opacity: 0, y: 10 }} 
-                                animate={{ opacity: 1, y: 0 }}
-                                className="bg-white border border-gray-100 rounded-2xl overflow-hidden hover:shadow-lg transition-all duration-300 group"
-                            >
-                                <div className="relative h-52 bg-gray-100 overflow-hidden">
-                                    {product.image_url ? (
-                                        <img 
-                                            src={product.image_url} 
-                                            alt={product.name} 
-                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
-                                        />
-                                    ) : (
-                                        <div className="flex items-center justify-center h-full text-gray-400">No Image</div>
-                                    )}
-                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
-                                    <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                        <Button size="icon" variant="secondary" className="h-8 w-8 bg-white/90 hover:bg-white shadow-sm" onClick={() => handleOpenModal(product)}>
-                                            <Edit className="h-4 w-4 text-blue-600" />
-                                        </Button>
-                                        <Button size="icon" variant="destructive" className="h-8 w-8 shadow-sm" onClick={() => initiateDelete(product)}>
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                    </div>
-                                </div>
-                                <div className="p-4">
-                                    <div className="flex justify-between items-start mb-2">
-                                        <div>
-                                            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 mb-2 inline-block">{product.category}</span>
-                                            <h3 className="font-bold text-gray-900 line-clamp-1">{product.name}</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        <AnimatePresence>
+                            {filteredProducts.map((product) => (
+                                <motion.div
+                                    key={product.id}
+                                    layout
+                                    initial={{ opacity: 0, scale: 0.9 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0, scale: 0.9 }}
+                                    transition={{ duration: 0.2 }}
+                                    className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col"
+                                >
+                                    {/* Image Section - Top */}
+                                    <div className="relative h-48 bg-gray-100 group">
+                                        {product.image_url ? (
+                                            <img 
+                                                src={product.image_url} 
+                                                alt={product.name} 
+                                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
+                                            />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center text-gray-400 bg-gray-50">
+                                                <Package className="h-10 w-10 opacity-20" />
+                                            </div>
+                                        )}
+                                        
+                                        {/* Floating Actions */}
+                                        <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                            <button 
+                                                onClick={() => handleOpenModal(product)}
+                                                className="p-2 bg-white/90 hover:bg-white rounded-full shadow-sm text-blue-600 transition-colors"
+                                                title="Edit"
+                                            >
+                                                <Edit className="h-4 w-4" />
+                                            </button>
+                                            <button 
+                                                onClick={() => initiateDelete(product)}
+                                                className="p-2 bg-white/90 hover:bg-white rounded-full shadow-sm text-red-500 transition-colors"
+                                                title="Delete"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </button>
                                         </div>
                                     </div>
-                                    
-                                    <div className="flex justify-between items-end mt-3">
-                                        <div>
-                                            <p className="text-xs text-gray-500 mb-0.5">Price</p>
-                                            <span className="text-green-700 font-bold text-lg">₵{product.price} <span className="text-xs font-normal text-gray-500">/ {product.unit}</span></span>
+
+                                    {/* Content Section - Vertical Stack */}
+                                    <div className="p-4 flex flex-col flex-grow">
+                                        <div className="mb-auto">
+                                            <h3 className="font-bold text-lg text-gray-900 line-clamp-1" title={product.name}>
+                                                {product.name}
+                                            </h3>
+                                            <p className="text-sm text-gray-500 mt-1">{product.category || 'Uncategorized'}</p>
                                         </div>
-                                        <div className="text-right">
-                                            <p className="text-xs text-gray-500 mb-0.5">Stock</p>
-                                            <span className={`text-sm font-medium ${product.stock > 0 ? 'text-gray-700' : 'text-red-500'}`}>
-                                                {product.stock > 0 ? product.stock : 'Out'}
+                                        
+                                        <div className="mt-4 flex items-end justify-between border-t pt-3 border-gray-50">
+                                            <div className="flex flex-col">
+                                                <span className="text-green-600 font-bold text-lg">
+                                                    ₵{product.price} <span className="text-xs font-normal text-gray-500">/ {product.unit}</span>
+                                                </span>
+                                            </div>
+                                            <span className={`text-sm font-medium ${product.stock > 0 ? 'text-gray-500' : 'text-red-500'}`}>
+                                                {product.stock > 0 ? `${product.stock} in stock` : 'Out of stock'}
                                             </span>
                                         </div>
                                     </div>
-                                </div>
-                            </motion.div>
-                        ))}
+                                </motion.div>
+                            ))}
+                        </AnimatePresence>
                     </div>
                 )}
             </div>
 
-            {/* Delete Confirmation Dialog */}
+            {/* Custom Styled Delete Dialog */}
             <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
-                <AlertDialogContent className="rounded-2xl">
-                    <AlertDialogHeader>
-                        <div className="mx-auto w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mb-4">
-                            <AlertTriangle className="h-6 w-6 text-red-600" />
-                        </div>
-                        <AlertDialogTitle className="text-center text-xl">Delete Product?</AlertDialogTitle>
-                        <AlertDialogDescription className="text-center">
-                            Are you sure you want to delete <span className="font-semibold text-gray-900">{productToDelete?.name}</span>? This action cannot be undone.
+                <AlertDialogContent className="bg-[#2A2A2A] border-none text-white max-w-[320px] sm:max-w-[400px] rounded-3xl p-6 shadow-2xl">
+                    <AlertDialogHeader className="space-y-3">
+                        <AlertDialogTitle className="text-center text-xl font-normal text-white">
+                            Delete Product?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="text-center text-gray-300 text-base leading-relaxed">
+                            Are you sure you want to delete <span className="text-white font-medium">"{productToDelete?.name}"</span>?
                         </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter className="sm:justify-center gap-2">
-                        <AlertDialogCancel className="rounded-full px-6">Cancel</AlertDialogCancel>
+                    <AlertDialogFooter className="flex flex-row justify-center gap-4 mt-6 sm:justify-center sm:space-x-0">
+                        <AlertDialogCancel className="flex-1 bg-transparent border border-gray-600 text-gray-300 hover:bg-white/10 hover:text-white hover:border-gray-500 rounded-xl h-10 mt-0">
+                            Cancel
+                        </AlertDialogCancel>
                         <AlertDialogAction 
                             onClick={confirmDelete} 
-                            className="bg-red-600 hover:bg-red-700 rounded-full px-6"
+                            className="flex-1 bg-red-600 hover:bg-red-700 text-white border-none rounded-xl h-10"
                         >
-                            Yes, Delete
+                            Delete
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
 
-            {/* Product Modal */}
+            {/* Product Form Modal */}
             <Dialog open={isProductModalOpen} onOpenChange={setIsProductModalOpen}>
                 <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
@@ -326,7 +359,7 @@ const FarmerDashboard = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="name">Product Name</Label>
-                                <Input id="name" name="name" value={formData.name} onChange={handleInputChange} required />
+                                <Input id="name" name="name" value={formData.name} onChange={handleInputChange} required placeholder="e.g. Tomatoes" />
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="category">Category</Label>
@@ -367,32 +400,4 @@ const FarmerDashboard = () => {
                         </div>
                         
                         <div className="space-y-2">
-                            <Label htmlFor="description">Description</Label>
-                            <Textarea id="description" name="description" value={formData.description} onChange={handleInputChange} rows={3} />
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label>Product Image (Any size allowed)</Label>
-                            <ImageUpload 
-                                imageFile={formData.imageFile} 
-                                onFileChange={handleFileChange} 
-                                existingImageUrl={formData.existingImageUrl} 
-                            />
-                        </div>
-
-                        <DialogFooter className="mt-6">
-                            <Button type="button" variant="outline" onClick={() => setIsProductModalOpen(false)}>Cancel</Button>
-                            <Button type="submit" disabled={isSubmitting} className="bg-green-600 hover:bg-green-700">
-                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                {editingProduct ? 'Update Product' : 'Add Product'}
-                            </Button>
-                        </DialogFooter>
-                    </form>
-                </DialogContent>
-            </Dialog>
-        </div>
-    );
-};
-
-export default FarmerDashboard;
-                
+                            <Label html
