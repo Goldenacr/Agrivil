@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, memo, useCallback, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -107,6 +106,12 @@ const MobileMenu = ({ isOpen, setIsOpen, user, profile, handleLogout }) => {
     { to: '/contact', icon: Phone, label: 'Contact' },
   ];
 
+  const dashboardItems = [
+    { to: getDashboardLink(), icon: LayoutDashboard, label: 'Dashboard' },
+    { to: '/my-orders', icon: Truck, label: 'My Orders' },
+    { to: '/settings', icon: Settings, label: 'Settings' },
+  ];
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -146,15 +151,14 @@ const MobileMenu = ({ isOpen, setIsOpen, user, profile, handleLogout }) => {
                   </ul>
                 </motion.nav>
 
-                <motion.div className="p-4 border-t mt-auto" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}>
+                <motion.div className="p-4 border-t" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}>
                   {user && profile ? (
-                    <div className="space-y-3">
-                        <Link to={getDashboardLink()} {...mobileLinkProps} className="flex items-center gap-4 p-3 rounded-lg text-lg font-medium text-gray-700 hover:bg-gray-100 hover:text-primary transition-colors">
-                            <LayoutDashboard className="w-5 h-5" /> Dashboard
-                        </Link>
-                        <Link to="/settings" {...mobileLinkProps} className="flex items-center gap-4 p-3 rounded-lg text-lg font-medium text-gray-700 hover:bg-gray-100 hover:text-primary transition-colors">
-                            <Settings className="w-5 h-5" /> Settings
-                        </Link>
+                    <div className="space-y-2">
+                        {dashboardItems.map(item => (
+                             <Link key={item.label} to={item.to} {...mobileLinkProps} className="flex items-center gap-4 p-3 rounded-lg text-lg font-medium text-gray-700 hover:bg-gray-100 hover:text-primary transition-colors">
+                                <item.icon className="w-5 h-5" /> {item.label}
+                            </Link>
+                        ))}
                         <button 
                             onClick={() => { handleLogout(); setIsOpen(false); }} 
                             className="w-full flex items-center gap-4 p-3 rounded-lg text-lg font-medium text-white bg-red-500 hover:bg-red-600 transition-colors shadow-sm mt-4"
@@ -285,4 +289,3 @@ const Navbar = () => {
 };
 
 export default Navbar;
-      

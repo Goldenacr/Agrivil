@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, memo } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useParams, useLocation } from 'react-router-dom';
@@ -182,4 +181,3 @@ const ProductsList = memo(() => {
 });
 
 export default ProductsList;
-                                                                                               
