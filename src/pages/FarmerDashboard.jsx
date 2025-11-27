@@ -400,4 +400,31 @@ const FarmerDashboard = () => {
                         </div>
                         
                         <div className="space-y-2">
-                            <Label html
+                            <Label htmlFor="description">Description</Label>
+                            <Textarea id="description" name="description" value={formData.description} onChange={handleInputChange} rows={3} />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label>Product Image (Any size)</Label>
+                            <ImageUpload 
+                                imageFile={formData.imageFile} 
+                                onFileChange={handleFileChange} 
+                                existingImageUrl={formData.existingImageUrl} 
+                            />
+                        </div>
+
+                        <DialogFooter className="mt-6">
+                            <Button type="button" variant="outline" onClick={() => setIsProductModalOpen(false)}>Cancel</Button>
+                            <Button type="submit" disabled={isSubmitting} className="bg-green-600 hover:bg-green-700">
+                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                {editingProduct ? 'Update Product' : 'Add Product'}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+        </div>
+    );
+};
+
+export default FarmerDashboard;
