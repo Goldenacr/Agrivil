@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -10,6 +11,22 @@ export const useCart = () => {
     return useContext(CartContext);
 };
 
+const incrementProductCartCount = async (productId) => {
+    try {
+        await supabase.rpc('increment_times_in_cart', { p_product_id: productId });
+    } catch (error) {
+        console.error("Failed to increment cart count:", error);
+    }
+};
+
+const incrementProductSoldCount = async (productId, quantity) => {
+    try {
+        await supabase.rpc('increment_product_sold_count', { p_product_id: productId, p_quantity: quantity });
+    } catch (error) {
+        console.error("Failed to increment sold count:", error);
+    }
+};
+
 export const CartProvider = ({ children }) => {
     const [cartItems, setCartItems] = useState([]);
     const [isCartOpen, setIsCartOpen] = useState(false);
@@ -17,22 +34,14 @@ export const CartProvider = ({ children }) => {
     const { user, profile } = useAuth();
     const navigate = useNavigate();
 
-    // Construct a unique key for the user's cart, or a guest key if not logged in
-    const cartKey = useMemo(() => 
-        user ? `golden_acres_cart_${user.id}` : 'golden_acres_cart_guest', 
-    [user]);
+    const cartKey = useMemo(() => user ? `golden_acres_cart_${user.id}` : 'golden_acres_cart_guest', [user]);
 
-    // Load cart when the user/key changes
     useEffect(() => {
         try {
             const localCart = localStorage.getItem(cartKey);
             if (localCart) {
                 const parsedCart = JSON.parse(localCart);
-                if (Array.isArray(parsedCart)) {
-                    setCartItems(parsedCart);
-                } else {
-                    setCartItems([]);
-                }
+                setCartItems(Array.isArray(parsedCart) ? parsedCart : []);
             } else {
                 setCartItems([]);
             }
@@ -42,7 +51,6 @@ export const CartProvider = ({ children }) => {
         }
     }, [cartKey]);
 
-    // Save cart whenever it changes
     useEffect(() => {
         if (cartKey) {
             localStorage.setItem(cartKey, JSON.stringify(cartItems));
@@ -51,11 +59,7 @@ export const CartProvider = ({ children }) => {
     
     const addToCart = useCallback((product, quantity = 1) => {
         if (!user) {
-            toast({
-                variant: 'destructive',
-                title: "Please Login First",
-                description: "You need to be logged in to add items to your cart.",
-            });
+            toast({ variant: 'destructive', title: "Please Login First", description: "You need to be logged in to add items to your cart." });
             navigate('/login');
             return;
         }
@@ -68,13 +72,12 @@ export const CartProvider = ({ children }) => {
                 return prevItems.map(item =>
                     item.id === product.id ? { ...item, quantity: item.quantity + quantity } : item
                 );
+            } else {
+                incrementProductCartCount(product.id);
+                return [...prevItems, { ...product, quantity }];
             }
-            return [...prevItems, { ...product, quantity }];
         });
-        toast({
-            title: "Added to Cart! 🛒",
-            description: `${quantity} x ${product.name} has been added.`,
-        });
+        toast({ title: "Added to Cart! 🛒", description: `${quantity} x ${product.name} has been added.` });
     }, [user, navigate, toast]);
 
     const removeFromCart = useCallback((productId) => {
@@ -96,7 +99,7 @@ export const CartProvider = ({ children }) => {
         localStorage.removeItem(cartKey);
     }, [cartKey]);
 
-    const handleWhatsAppCheckout = useCallback(async () => {
+    const handleWhatsAppCheckout = useCallback(async (deliveryDetails) => {
         if (cartItems.length === 0) {
             toast({ title: "Your cart is empty!" });
             return;
@@ -112,9 +115,15 @@ export const CartProvider = ({ children }) => {
         try {
             const { data: orderData, error: orderError } = await supabase
                 .from('orders')
-                .insert({ user_id: user.id, total_amount: subtotal, customer_name: profile.full_name, customer_phone: profile.phone_number, status: 'Order Placed' })
-                .select()
-                .single();
+                .insert({ 
+                    user_id: user.id, 
+                    total_amount: subtotal, 
+                    customer_name: profile.full_name, 
+                    customer_phone: profile.phone_number, 
+                    status: 'Order Placed',
+                    delivery_info: deliveryDetails 
+                })
+                .select().single();
             if (orderError) throw orderError;
             
             const orderItemsToInsert = cartItems.map(item => ({
@@ -123,8 +132,13 @@ export const CartProvider = ({ children }) => {
             }));
             const { error: itemsError } = await supabase.from('order_items').insert(orderItemsToInsert);
             if (itemsError) {
-                await supabase.from('orders').delete().eq('id', orderData.id); // Rollback
+                await supabase.from('orders').delete().eq('id', orderData.id);
                 throw itemsError;
+            }
+
+            // Increment sold count for each product in the order
+            for (const item of cartItems) {
+                await incrementProductSoldCount(item.id, item.quantity);
             }
 
             let message = `*New Order from Golden Acres!* ✨\n\n*Order ID:* ${orderData.id.substring(0,8)}\n*Customer:* ${profile.full_name}\n\nI'd like to place an order for:\n\n`;
@@ -145,17 +159,10 @@ export const CartProvider = ({ children }) => {
         } catch (error) {
             toast({ variant: 'destructive', title: "Order Failed", description: error.message });
         }
-    }, [cartItems, user, profile, toast, navigate, clearCart]);
+    }, [cartItems, user, profile, toast, navigate, clearCart, setIsCartOpen]);
 
     const value = useMemo(() => ({
-        cartItems,
-        isCartOpen,
-        setIsCartOpen,
-        addToCart,
-        removeFromCart,
-        updateQuantity,
-        clearCart,
-        handleWhatsAppCheckout,
+        cartItems, isCartOpen, setIsCartOpen, addToCart, removeFromCart, updateQuantity, clearCart, handleWhatsAppCheckout,
     }), [cartItems, isCartOpen, addToCart, removeFromCart, updateQuantity, clearCart, handleWhatsAppCheckout]);
 
     return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
