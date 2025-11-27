@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -145,4 +144,3 @@ const UsersTab = ({ users, currentUser, onRoleUpdate, onBan, onDelete }) => {
 };
 
 export default UsersTab;
-                

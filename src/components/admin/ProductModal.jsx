@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
@@ -184,4 +183,3 @@ const ProductModal = ({ isOpen, onOpenChange, product, farmers, onSave }) => {
 };
 
 export default ProductModal;
-              
