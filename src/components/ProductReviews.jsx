@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -47,7 +48,7 @@ const ReviewItem = ({ review, onReply, currentUser, depth = 0 }) => {
                     <div>
                         <div className="flex items-center gap-2">
                             <h5 className="font-semibold text-gray-900 text-sm">
-                                {isAdmin ? "Golden Acres Team" : (review.user?.full_name || 'Anonymous User')}
+                                {isAdmin ? "Agribridge Team" : (review.user?.full_name || 'Anonymous User')}
                             </h5>
                             {isAdmin && (
                                 <div className="flex items-center gap-1 bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border border-orange-200">

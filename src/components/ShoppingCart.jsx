@@ -1,3 +1,4 @@
+
 import React, { useMemo, useCallback } from 'react';
 import { useCart } from '@/hooks/useCart';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -75,9 +76,9 @@ const ShoppingCart = () => {
                                                 <p className="font-semibold">{item.name}</p>
                                                 <p className="text-sm text-gray-500">GHS {Number(item.price).toLocaleString()}</p>
                                                 <div className="flex items-center space-x-2 mt-2">
-                                                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => updateQuantity(item.id, item.quantity - 1)}><Minus className="h-4 w-4" /></Button>
+                                                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => updateQuantity(item.id, item.quantity - 1)}>-</Button>
                                                     <span className="w-8 text-center">{item.quantity}</span>
-                                                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => updateQuantity(item.id, item.quantity + 1)}><Plus className="h-4 w-4" /></Button>
+                                                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => updateQuantity(item.id, item.quantity + 1)}>+</Button>
                                                 </div>
                                             </div>
                                             <Button variant="ghost" size="icon" onClick={() => removeFromCart(item.id)}>

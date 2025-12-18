@@ -48,7 +48,7 @@ const Sidebar = ({ isOpen, onToggle }) => {
     <aside className={`fixed inset-y-0 left-0 bg-gray-900 text-white z-50 transform ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0 transition-transform duration-300 ease-in-out w-64`}>
       <div className="flex h-full flex-col">
         <div className="flex items-center justify-between p-4 h-16 border-b border-gray-800">
-          <Link to="/" className="text-2xl font-bold">Golden Acres</Link>
+          <Link to="/" className="text-2xl font-bold">Agribridge</Link>
           <button onClick={onToggle} className="md:hidden text-gray-400 hover:text-white">
             <X className="h-6 w-6" />
           </button>
