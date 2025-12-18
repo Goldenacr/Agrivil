@@ -11,6 +11,7 @@ import { BookOpen, MapPin } from 'lucide-react';
 import MainLayout from '@/components/MainLayout';
 import AdminLayout from '@/components/AdminLayout';
 import ScrollToTop from '@/components/ScrollToTop';
+import RequireProfileCompletion from '@/components/RequireProfileCompletion';
 
 // Lazy-loaded pages for code splitting
 const HomePage = React.lazy(() => import('@/pages/HomePage'));
@@ -40,6 +41,7 @@ const ProfileSettingsPage = React.lazy(() => import('@/pages/ProfileSettingsPage
 const SecuritySettingsPage = React.lazy(() => import('@/pages/SecuritySettingsPage'));
 const OrderTrackingPage = React.lazy(() => import('@/pages/OrderTrackingPage'));
 const FarmerProfilePage = React.lazy(() => import('@/pages/FarmerProfilePage'));
+const CompleteRegistrationPage = React.lazy(() => import('@/pages/CompleteRegistrationPage'));
 
 // New Admin Pages
 const AdminOrdersPage = React.lazy(() => import('@/pages/admin/AdminOrdersPage'));
@@ -74,6 +76,8 @@ function App() {
           <CartProvider>
               <Suspense fallback={<PageLoader />}>
                   <Routes>
+                      <Route path="/complete-profile" element={<CompleteRegistrationPage />} />
+                      
                       <Route path="/admin-dashboard/*" element={<AdminLayout />}>
                         <Route index element={<AdminDashboard />} />
                         <Route path="users" element={<AdminUsersPage />} />
@@ -89,34 +93,36 @@ function App() {
                         <Route path="settings" element={<AdminSettingsPage />} />
                       </Route>
                       <Route path="/*" element={
-                        <MainLayout>
-                          <Routes>
-                            <Route path="/" element={<HomePage />} />
-                            <Route path="/about" element={<AboutPage />} />
-                            <Route path="/marketplace" element={<MarketplacePage />} />
-                            <Route path="/marketplace/:id" element={<ProductDetailPage />} />
-                            <Route path="/farmer/:id" element={<FarmerProfilePage />} />
-                            <Route path="/farmer-onboarding" element={<FarmerOnboardingPage />} />
-                            <Route path="/farmer-verification" element={<FarmerVerificationPage />} />
-                            <Route path="/logistics" element={<LogisticsPage />} />
-                            <Route path="/contact" element={<ContactPage />} />
-                            <Route path="/blog" element={<BlogPage />} />
-                            <Route path="/blog/:id" element={<BlogPostDetailPage />} />
-                            <Route path="/login" element={<LoginPage />} />
-                            <Route path="/register" element={<RegisterPage />} />
-                            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-                            <Route path="/farmer-dashboard" element={<FarmerDashboard />} />
-                            <Route path="/farmer-dashboard/revenue" element={<FarmerRevenuePage />} />
-                            <Route path="/customer-dashboard" element={<CustomerDashboard />} />
-                            <Route path="/my-orders" element={<MyOrdersPage />} />
-                            <Route path="/track-order/:orderId" element={<OrderTrackingPage />} />
-                            <Route path="/checkout" element={<CheckoutPage />} />
-                            <Route path="/success" element={<SuccessPage />} />
-                             <Route path="/settings" element={<SettingsPage />} />
-                             <Route path="/settings/profile" element={<ProfileSettingsPage />} />
-                             <Route path="/settings/security" element={<SecuritySettingsPage />} />
-                          </Routes>
-                        </MainLayout>
+                        <RequireProfileCompletion>
+                            <MainLayout>
+                            <Routes>
+                                <Route path="/" element={<HomePage />} />
+                                <Route path="/about" element={<AboutPage />} />
+                                <Route path="/marketplace" element={<MarketplacePage />} />
+                                <Route path="/marketplace/:id" element={<ProductDetailPage />} />
+                                <Route path="/farmer/:id" element={<FarmerProfilePage />} />
+                                <Route path="/farmer-onboarding" element={<FarmerOnboardingPage />} />
+                                <Route path="/farmer-verification" element={<FarmerVerificationPage />} />
+                                <Route path="/logistics" element={<LogisticsPage />} />
+                                <Route path="/contact" element={<ContactPage />} />
+                                <Route path="/blog" element={<BlogPage />} />
+                                <Route path="/blog/:id" element={<BlogPostDetailPage />} />
+                                <Route path="/login" element={<LoginPage />} />
+                                <Route path="/register" element={<RegisterPage />} />
+                                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                                <Route path="/farmer-dashboard" element={<FarmerDashboard />} />
+                                <Route path="/farmer-dashboard/revenue" element={<FarmerRevenuePage />} />
+                                <Route path="/customer-dashboard" element={<CustomerDashboard />} />
+                                <Route path="/my-orders" element={<MyOrdersPage />} />
+                                <Route path="/track-order/:orderId" element={<OrderTrackingPage />} />
+                                <Route path="/checkout" element={<CheckoutPage />} />
+                                <Route path="/success" element={<SuccessPage />} />
+                                <Route path="/settings" element={<SettingsPage />} />
+                                <Route path="/settings/profile" element={<ProfileSettingsPage />} />
+                                <Route path="/settings/security" element={<SecuritySettingsPage />} />
+                            </Routes>
+                            </MainLayout>
+                        </RequireProfileCompletion>
                       } />
                   </Routes>
               </Suspense>
@@ -141,3 +147,4 @@ function App() {
 }
 
 export default App;
+    
