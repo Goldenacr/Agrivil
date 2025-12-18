@@ -1,12 +1,4 @@
-
 import React, { useState } from 'react';
-import {
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Trash, Eye, MapPin } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const OrdersTab = ({ orders, onStatusUpdate, onDelete }) => {
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -61,48 +53,66 @@ const OrdersTab = ({ orders, onStatusUpdate, onDelete }) => {
 
   return (
     <>
-    <div className="rounded-md border bg-white">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Order ID</TableHead>
-            <TableHead>Customer</TableHead>
-            <TableHead>Total</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Delivery Method</TableHead>
-            <TableHead>Date</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
+    <div className="rounded-md border bg-white overflow-x-auto">
+      <div className="min-w-full">
+        {/* Table Header */}
+        <div className="grid grid-cols-7 gap-4 p-4 bg-gray-50 border-b font-medium">
+          <div>Order ID</div>
+          <div>Customer</div>
+          <div>Total</div>
+          <div>Status</div>
+          <div>Delivery Method</div>
+          <div>Date</div>
+          <div className="text-right">Actions</div>
+        </div>
+        
+        {/* Table Body */}
+        <div>
           {orders.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={7} className="h-24 text-center">
-                No orders found.
-              </TableCell>
-            </TableRow>
+            <div className="p-8 text-center h-24 flex items-center justify-center">
+              No orders found.
+            </div>
           ) : (
             orders.map((order) => (
-              <TableRow key={order.id}>
-                <TableCell className="font-medium">{order.id.substring(0, 8)}</TableCell>
-                <TableCell>
+              <div key={order.id} className="grid grid-cols-7 gap-4 p-4 border-b hover:bg-gray-50">
+                {/* Order ID */}
+                <div className="font-medium truncate">
+                  {order.id.substring(0, 8)}
+                </div>
+                
+                {/* Customer */}
+                <div>
                   <div className="flex flex-col">
-                    <span className="font-medium">{order.customer_name || 'Guest'}</span>
-                    <span className="text-xs text-muted-foreground">{order.customer_phone || 'No phone'}</span>
+                    <span className="font-medium truncate">{order.customer_name || 'Guest'}</span>
+                    <span className="text-xs text-muted-foreground truncate">{order.customer_phone || 'No phone'}</span>
                   </div>
-                </TableCell>
-                <TableCell>{formatPrice(order.total_amount)}</TableCell>
-                <TableCell>
+                </div>
+                
+                {/* Total */}
+                <div>
+                  {formatPrice(order.total_amount)}
+                </div>
+                
+                {/* Status */}
+                <div>
                   <Badge className={getStatusColor(order.status)}>{order.status}</Badge>
-                </TableCell>
-                <TableCell>
+                </div>
+                
+                {/* Delivery Method */}
+                <div>
                    <div className="flex items-center gap-1 text-sm text-gray-600">
-                      <MapPin className="w-3 h-3" />
-                      {getDeliveryDisplay(order)}
+                      <MapPin className="w-3 h-3 flex-shrink-0" />
+                      <span className="truncate">{getDeliveryDisplay(order)}</span>
                    </div>
-                </TableCell>
-                <TableCell>{new Date(order.created_at).toLocaleDateString()}</TableCell>
-                <TableCell className="text-right">
+                </div>
+                
+                {/* Date */}
+                <div>
+                  {new Date(order.created_at).toLocaleDateString()}
+                </div>
+                
+                {/* Actions */}
+                <div className="text-right">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" className="h-8 w-8 p-0">
@@ -127,12 +137,12 @@ const OrdersTab = ({ orders, onStatusUpdate, onDelete }) => {
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
-                </TableCell>
-              </TableRow>
+                </div>
+              </div>
             ))
           )}
-        </TableBody>
-      </Table>
+        </div>
+      </div>
     </div>
 
     {/* Order Details Modal */}
@@ -158,27 +168,28 @@ const OrdersTab = ({ orders, onStatusUpdate, onDelete }) => {
                     
                     <div>
                         <h4 className="font-semibold mb-2">Order Items</h4>
-                        <div className="border rounded-md">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Product</TableHead>
-                                        <TableHead>Farmer</TableHead>
-                                        <TableHead>Qty</TableHead>
-                                        <TableHead className="text-right">Price</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
+                        <div className="border rounded-md overflow-x-auto">
+                            <div className="min-w-full">
+                                {/* Items Table Header */}
+                                <div className="grid grid-cols-4 gap-4 p-3 bg-gray-50 border-b font-medium">
+                                    <div>Product</div>
+                                    <div>Farmer</div>
+                                    <div>Qty</div>
+                                    <div className="text-right">Price</div>
+                                </div>
+                                
+                                {/* Items Table Body */}
+                                <div>
                                     {selectedOrder.order_items?.map((item, idx) => (
-                                        <TableRow key={idx}>
-                                            <TableCell>{item.product_name}</TableCell>
-                                            <TableCell>{item.farmer_name || 'N/A'}</TableCell>
-                                            <TableCell>{item.quantity}</TableCell>
-                                            <TableCell className="text-right">{formatPrice(item.price)}</TableCell>
-                                        </TableRow>
+                                        <div key={idx} className="grid grid-cols-4 gap-4 p-3 border-b hover:bg-gray-50">
+                                            <div>{item.product_name}</div>
+                                            <div>{item.farmer_name || 'N/A'}</div>
+                                            <div>{item.quantity}</div>
+                                            <div className="text-right">{formatPrice(item.price)}</div>
+                                        </div>
                                     ))}
-                                </TableBody>
-                            </Table>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     
