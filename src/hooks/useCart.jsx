@@ -209,7 +209,7 @@ export const CartProvider = ({ children }) => {
         }
     }, [cartItems, user, profile, toast, navigate, setIsCartOpen, clearCart]);
 
-    const handlePaystackCheckout = useCallback(async (deliveryDetails) => {
+    const handlePaystackCheckout = useCallback(async (deliveryDetails, specificChannel = null) => {
         if (!deliveryDetails || deliveryDetails.nativeEvent || deliveryDetails.constructor?.name === 'SyntheticBaseEvent' || (deliveryDetails.target && deliveryDetails.type)) {
              setIsCartOpen(false);
              navigate('/checkout');
@@ -238,8 +238,20 @@ export const CartProvider = ({ children }) => {
             return;
         }
 
+        // Determine available channels
         let paymentChannels = ['card', 'mobile_money']; 
+        
+        // If a specific channel is requested (e.g., user clicked "Mobile Money"), prioritize it
+        if (specificChannel) {
+            paymentChannels = [specificChannel];
+        }
+
+        // Validate international restrictions
         if (profile?.country && profile.country !== 'Ghana') {
+            if (specificChannel === 'mobile_money') {
+                 toast({ variant: 'destructive', title: "Unavailable", description: "Mobile Money payment is only available for customers in Ghana." });
+                 return;
+            }
             paymentChannels = ['card']; 
         }
 
@@ -303,7 +315,8 @@ export const CartProvider = ({ children }) => {
                 metadata: {
                     custom_fields: [
                         { display_name: "Customer Name", variable_name: "customer_name", value: profile.full_name || '' },
-                        { display_name: "Phone Number", variable_name: "phone_number", value: profile.phone_number || '' }
+                        { display_name: "Phone Number", variable_name: "phone_number", value: profile.phone_number || '' },
+                        { display_name: "Payment Method", variable_name: "payment_method", value: specificChannel === 'mobile_money' ? 'Mobile Money' : 'Card/Other' }
                     ]
                 },
                 onClose: function() {
@@ -336,3 +349,4 @@ export const CartProvider = ({ children }) => {
 
     return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 };
+                
