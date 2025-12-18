@@ -1,4 +1,3 @@
-
 SELECT
     p.id,
     p.name,
