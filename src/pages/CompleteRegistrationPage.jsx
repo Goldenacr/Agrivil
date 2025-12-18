@@ -19,11 +19,9 @@ import { Loader2, Truck, Warehouse, Info, ChevronDown, CheckCircle, Sprout, User
 import { supabase } from '@/lib/customSupabaseClient';
 import countryData from '@/lib/countryData.json';
 
-const regions = countryData.regions || [];
-
 const baseSchema = z.object({
   role: z.enum(['customer', 'farmer']),
-  phone_number: z.string().min(9, { message: "Valid phone number is required" }),
+  phone_number: z.string().min(1, { message: "Phone number is required" }),
   gender: z.string().min(1, { message: "Please select a gender" }),
   date_of_birth: z.string().refine(val => new Date(val).toString() !== 'Invalid Date', { message: 'Please enter a valid date' }),
   country: z.string().min(1, { message: "Country is required" }),
@@ -59,6 +57,18 @@ const formSchema = z.discriminatedUnion("role", [
 }, {
     message: "Please select a pickup hub",
     path: ["preferred_hub"],
+}).superRefine((data, ctx) => {
+    const countryInfo = countryData.countries.find(c => c.name === data.country);
+    if (countryInfo) {
+        const phone = data.phone_number.replace(/\D/g, '');
+        if (phone.length !== countryInfo.phone_length) {
+             ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: `Phone number for ${data.country} must be ${countryInfo.phone_length} digits`,
+                path: ['phone_number']
+            });
+        }
+    }
 });
 
 const FloatingLabelInput = ({ name, label, type, register, errors, ...props }) => {
@@ -79,7 +89,7 @@ const FloatingLabelInput = ({ name, label, type, register, errors, ...props }) =
     );
 };
 
-const RegionSelector = ({ value, onSelect, error }) => {
+const RegionSelector = ({ value, onSelect, error, regions }) => {
   const [isOpen, setIsOpen] = useState(false);
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -91,12 +101,16 @@ const RegionSelector = ({ value, onSelect, error }) => {
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader><DialogTitle>Select Region</DialogTitle></DialogHeader>
         <div className="max-h-[60vh] overflow-y-auto">
-          {regions.map((region) => (
-            <div key={region} onClick={() => { onSelect(region); setIsOpen(false); }} className="flex items-center justify-between p-3 hover:bg-muted/50 rounded-md cursor-pointer">
-              <span>{region}</span>
-              {value === region && <CheckCircle className="h-5 w-5 text-primary" />}
-            </div>
-          ))}
+          {regions && regions.length > 0 ? (
+              regions.map((region) => (
+                <div key={region} onClick={() => { onSelect(region); setIsOpen(false); }} className="flex items-center justify-between p-3 hover:bg-muted/50 rounded-md cursor-pointer">
+                  <span>{region}</span>
+                  {value === region && <CheckCircle className="h-5 w-5 text-primary" />}
+                </div>
+              ))
+          ) : (
+              <div className="p-4 text-center text-muted-foreground">No regions available for this country.</div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
@@ -136,6 +150,7 @@ export default function CompleteRegistrationPage() {
 
     const { register, handleSubmit, watch, setValue, formState: { errors } } = methods;
     const role = watch('role');
+    const selectedCountry = watch('country');
     const selectedRegion = watch('region');
     const deliveryMethod = watch('preferred_delivery_method');
     const selectedHubId = watch('preferred_hub');
@@ -154,7 +169,12 @@ export default function CompleteRegistrationPage() {
                 const response = await fetch('https://ipwho.is/');
                 const data = await response.json();
                 if (data.success) {
-                    setValue('country', data.country, { shouldValidate: true });
+                    const isSupported = countryData.countries.some(c => c.name === data.country);
+                    if(isSupported) {
+                         setValue('country', data.country, { shouldValidate: true });
+                    } else {
+                         setValue('country', 'Ghana');
+                    }
                 } else {
                     setValue('country', 'Ghana');
                 }
@@ -203,8 +223,6 @@ export default function CompleteRegistrationPage() {
             const updates = {
                 ...data,
                 age: age,
-                // Ensure profile is marked as valid/complete conceptually if we had such a flag, 
-                // but checking for phone_number presence is our flag.
             };
 
             const { error } = await supabase
@@ -214,7 +232,7 @@ export default function CompleteRegistrationPage() {
 
             if (error) throw error;
             
-            await fetchProfile(user.id); // Refresh local profile state
+            await fetchProfile(user.id); 
             toast({ title: "Profile updated!", description: "Welcome to Agribridge." });
             navigate('/');
         } catch (error) {
@@ -288,6 +306,10 @@ export default function CompleteRegistrationPage() {
        </AnimatePresence>
     );
 
+    // Get current country's regions
+    const currentCountryInfo = countryData.countries.find(c => c.name === selectedCountry);
+    const availableRegions = currentCountryInfo ? currentCountryInfo.regions : [];
+
     return (
         <>
             <Helmet>
@@ -320,7 +342,13 @@ export default function CompleteRegistrationPage() {
                                 </CardHeader>
                                 <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="md:col-span-2">
-                                        <FloatingLabelInput name="phone_number" label="Phone Number" type="tel" register={register} errors={errors} />
+                                        <FloatingLabelInput 
+                                            name="phone_number" 
+                                            label={`Phone Number (${currentCountryInfo ? currentCountryInfo.phone_length + ' digits' : 'Required'})`} 
+                                            type="tel" 
+                                            register={register} 
+                                            errors={errors} 
+                                        />
                                     </div>
                                     <div className="relative floating-input">
                                         <Input id="date_of_birth" type="date" {...register("date_of_birth")} className="h-12 has-value" />
@@ -329,7 +357,7 @@ export default function CompleteRegistrationPage() {
                                     </div>
                                     <div>
                                         <Select onValueChange={(value) => setValue('gender', value, { shouldValidate: true })}>
-                                            <SelectTrigger className="h-12 text-base font-normal">
+                         <SelectTrigger className="h-12 text-base font-normal">
                                                 <SelectValue placeholder="Select Gender" />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -346,11 +374,16 @@ export default function CompleteRegistrationPage() {
                                 <CardHeader><CardTitle className="flex items-center text-xl"><MapPin className="mr-3 text-primary" /> Location Information</CardTitle></CardHeader>
                                 <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="md:col-span-2 relative">
-                                        <FloatingLabelInput name="country" label="Country" register={register} errors={errors} />
+                                        <FloatingLabelInput name="country" label="Country" register={register} errors={errors} readOnly={true}/>
                                         {detectingLocation && <Loader2 className="absolute right-3 top-3.5 h-5 w-5 animate-spin text-muted-foreground" />}
                                     </div>
                                     <div className="md:col-span-2">
-                                      <RegionSelector value={selectedRegion} onSelect={(region) => setValue('region', region, { shouldValidate: true })} error={errors.region} />
+                                      <RegionSelector 
+                                        value={selectedRegion} 
+                                        onSelect={(region) => setValue('region', region, { shouldValidate: true })} 
+                                        error={errors.region}
+                                        regions={availableRegions}
+                                      />
                                       {errors.region && <p className="text-red-500 text-xs mt-1">{errors.region.message}</p>}
                                     </div>
                                     <FloatingLabelInput name="city_town" label="City / Town" register={register} errors={errors} />
