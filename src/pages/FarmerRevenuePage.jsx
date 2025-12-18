@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
@@ -134,7 +135,7 @@ const FarmerRevenuePage = () => {
     return (
         <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8 min-h-screen bg-white">
             <Helmet>
-                <title>Revenue Analytics - Golden Acres</title>
+                <title>Revenue Analytics - Agribridge</title>
             </Helmet>
 
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">

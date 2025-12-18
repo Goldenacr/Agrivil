@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
@@ -109,8 +110,8 @@ const LoginPage = () => {
     return (
         <>
             <Helmet>
-                <title>Login - Golden Acres</title>
-                <meta name="description" content="Login to your Golden Acres account." />
+                <title>Login - Agribridge</title>
+                <meta name="description" content="Login to your Agribridge account." />
             </Helmet>
             <div className="flex items-center justify-center min-h-[calc(100vh-8rem)] bg-transparent px-4 py-12">
                 <motion.div
@@ -129,7 +130,7 @@ const LoginPage = () => {
                             </Link>
                         </Button>
                     </div>
-                    <p className="mt-2 text-gray-600 text-center">Sign in to continue to Golden Acres.</p>
+                    <p className="mt-2 text-gray-600 text-center">Sign in to continue to Agribridge.</p>
 
                     <form className="space-y-6" onSubmit={handleLogin}>
                         <FloatingLabelInput
@@ -140,16 +141,27 @@ const LoginPage = () => {
                             onChange={(e) => setEmail(e.target.value)}
                             disabled={loading}
                         />
-                        <FloatingLabelInput
-                            id="password"
-                            label="Password"
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            disabled={loading}
-                            showPassword={showPassword}
-                            onTogglePassword={() => setShowPassword(!showPassword)}
-                        />
+                        <div className="space-y-2">
+                            <FloatingLabelInput
+                                id="password"
+                                label="Password"
+                                type="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                disabled={loading}
+                                showPassword={showPassword}
+                                onTogglePassword={() => setShowPassword(!showPassword)}
+                            />
+                            <div className="flex justify-end">
+                                <Link 
+                                    to="/forgot-password" 
+                                    className="text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+                                >
+                                    Forgot password?
+                                </Link>
+                            </div>
+                        </div>
+
                         <Button type="submit" className="w-full" disabled={loading}>
                             {loading ? 'Signing in...' : 'Sign In'}
                         </Button>

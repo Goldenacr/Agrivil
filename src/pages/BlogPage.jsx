@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -48,8 +49,8 @@ const BlogPage = () => {
   return (
     <>
       <Helmet>
-        <title>Blog - Golden Acres</title>
-        <meta name="description" content="Read the latest news, articles, and insights on agriculture, technology, and community from Golden Acres." />
+        <title>Blog - Agribridge</title>
+        <meta name="description" content="Read the latest news, articles, and insights on agriculture, technology, and community from Agribridge." />
       </Helmet>
       <div className="py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -60,7 +61,7 @@ const BlogPage = () => {
               transition={{ duration: 0.5 }}
             >
                 <div></div>
-                <h1 className="text-5xl font-bold text-gray-900">Golden Acres Blog</h1>
+                <h1 className="text-5xl font-bold text-gray-900">Agribridge Blog</h1>
                 <Button asChild variant="outline">
                     <Link to="/">
                         <Home className="h-4 w-4 mr-2" />

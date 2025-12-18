@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { supabase } from '@/lib/customSupabaseClient';
@@ -44,7 +45,7 @@ const ResetPasswordPage = () => {
     return (
         <>
             <Helmet>
-                <title>Reset Password - Golden Acres</title>
+                <title>Reset Password - Agribridge</title>
             </Helmet>
             <div className="space-y-6">
                 <div>

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Helmet } from 'react-helmet';
 import { supabase } from '@/lib/customSupabaseClient';
@@ -61,7 +62,7 @@ const AdminDashboard = () => {
 
     return (
         <>
-            <Helmet><title>Admin Dashboard - Golden Acres</title></Helmet>
+            <Helmet><title>Admin Dashboard - Agribridge</title></Helmet>
             <div className="flex-1 space-y-8 py-8">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0">
                     <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>

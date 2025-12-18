@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
@@ -11,7 +12,7 @@ const BlogPostDetailPage = () => {
   const { id } = useParams();
   const { toast } = useToast();
   const [post, setPost] = useState(null);
-  const [authorName, setAuthorName] = useState('Golden Acres Admin');
+  const [authorName, setAuthorName] = useState('Agribridge Admin');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -77,7 +78,7 @@ const BlogPostDetailPage = () => {
   return (
     <>
       <Helmet>
-        <title>{`${post.title} - Golden Acres Blog`}</title>
+        <title>{`${post.title} - Agribridge Blog`}</title>
         <meta name="description" content={post.excerpt} />
       </Helmet>
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">

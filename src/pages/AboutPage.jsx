@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
@@ -14,8 +15,8 @@ const AboutPage = () => {
   return (
     <>
       <Helmet>
-        <title>About Us - Golden Acres</title>
-        <meta name="description" content="Learn about Golden Acres' mission to connect farmers with markets and transform agriculture in Ghana." />
+        <title>About Us - Agribridge</title>
+        <meta name="description" content="Learn about Agribridge's mission to connect farmers with markets and transform agriculture in Ghana." />
       </Helmet>
 
       <motion.div 
@@ -47,7 +48,7 @@ const AboutPage = () => {
               transition={{ duration: 0.7, delay: 0.2 }}
               className="text-5xl font-bold mb-4"
             >
-              About Golden Acres
+              About Agribridge
             </motion.h1>
             <motion.p
               initial={{ opacity: 0, y: 30 }}
@@ -71,7 +72,7 @@ const AboutPage = () => {
               >
                 <h2 className="text-4xl font-bold text-gray-900 mb-6">Our Story</h2>
                 <motion.p {...staggeredFadeIn} transition={{ delay: 0.1, duration: 0.6 }} className="text-lg text-gray-600 mb-4">
-                  Golden Acres was founded with a simple yet powerful vision: to create a direct connection between farmers and consumers, eliminating unnecessary middlemen and ensuring fair prices for all.
+                  Agribridge was founded with a simple yet powerful vision: to create a direct connection between farmers and consumers, eliminating unnecessary middlemen and ensuring fair prices for all.
                 </motion.p>
                 <motion.p {...staggeredFadeIn} transition={{ delay: 0.2, duration: 0.6 }} className="text-lg text-gray-600 mb-4">
                   We recognized that farmers often struggle to access markets while consumers seek fresh, quality produce. By leveraging technology, we've built a platform that benefits everyone in the agricultural value chain.
@@ -90,7 +91,7 @@ const AboutPage = () => {
               >
                 <motion.img 
                   className="w-full h-full object-cover" 
-                  alt="Golden Acres team" 
+                  alt="Agribridge team" 
                   src="https://images.unsplash.com/photo-1637622124152-33adfabcc923"
                   whileHover={{ scale: 1.05 }}
                   transition={{ duration: 0.4 }}

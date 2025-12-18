@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { Link, useLocation } from 'react-router-dom';
@@ -25,7 +26,7 @@ const SuccessPage = () => {
   return (
     <>
       <Helmet>
-        <title>Payment Successful - Golden Acres</title>
+        <title>Payment Successful - Agribridge</title>
         <meta name="description" content="Your order has been placed successfully." />
       </Helmet>
       <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -41,6 +42,7 @@ const AdminUserDetailsPage = () => {
     const { toast } = useToast();
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [hubName, setHubName] = useState(null);
 
     useEffect(() => {
         const fetchUserDetails = async () => {
@@ -48,7 +50,7 @@ const AdminUserDetailsPage = () => {
             
             setLoading(true);
             try {
-                console.log('Fetching details for user:', id);
+                // Using the RPC function to get a flattened, comprehensive view of the user
                 const { data, error } = await supabase.rpc('get_user_full_details', { target_user_id: id });
 
                 if (error) {
@@ -56,14 +58,25 @@ const AdminUserDetailsPage = () => {
                     throw error;
                 }
                 
-                // Sanity check to ensure we have a user object even if empty
                 if (!data) {
-                    console.warn('No data returned for user:', id);
                     throw new Error("User details not found.");
                 }
                 
-                console.log('Received user data:', data);
                 setUser(data);
+
+                // Fetch hub name if preferred_hub exists
+                if (data.preferred_hub && data.preferred_delivery_method === 'Pickup') {
+                    const { data: hubData, error: hubError } = await supabase
+                        .from('pickup_hubs')
+                        .select('name')
+                        .eq('id', data.preferred_hub)
+                        .single();
+                    
+                    if (!hubError && hubData) {
+                        setHubName(hubData.name);
+                    }
+                }
+
             } catch (error) {
                 console.error("Error details:", error);
                 toast({
@@ -202,10 +215,13 @@ const AdminUserDetailsPage = () => {
                                 <DetailRow 
                                     icon={Truck} 
                                     label="Preferred Delivery Method" 
-                                    value={user.preferred_delivery_method === 'hub' 
-                                        ? `Hub Pickup (${formatValue(user.preferred_hub)})` 
-                                        : (user.preferred_delivery_method === 'home' ? 'Home Delivery' : formatValue(user.preferred_delivery_method))} 
+                                    value={user.preferred_delivery_method === 'Pickup' && hubName 
+                                        ? `Pickup at ${hubName}` 
+                                        : (user.preferred_delivery_method === 'Delivery' ? 'Home Delivery' : formatValue(user.preferred_delivery_method))} 
                                 />
+                                {user.preferred_delivery_method === 'Pickup' && (
+                                    <DetailRow icon={Truck} label="Hub ID" value={user.preferred_hub} />
+                                )}
                             </div>
                         </div>
 
@@ -218,8 +234,8 @@ const AdminUserDetailsPage = () => {
                                     </h4>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-1">
                                         <DetailRow icon={Hash} label="National ID" value={user.national_id} />
-                                        <DetailRow icon={MapPin} label="Farm Location (GPS)" value={user.gps_location} />
-                                        <DetailRow icon={MapPin} label="Farm Address" value={user.farm_address} />
+                                        <DetailRow icon={MapIcon} label="Farm Location (GPS)" value={user.gps_location} />
+                                        <DetailRow icon={MapIcon} label="Farm Address" value={user.farm_address} />
                                         <DetailRow icon={Tractor} label="Farm Type" value={user.farm_type} />
                                         <DetailRow icon={Ruler} label="Farm Size" value={user.farm_size} suffix="Acres" />
                                         <DetailRow icon={Briefcase} label="Main Products" value={user.main_products} />

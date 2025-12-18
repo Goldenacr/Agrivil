@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -29,8 +30,8 @@ const HomePage = () => {
   return (
     <>
       <Helmet>
-        <title>Golden Acres - Fresh Farm Produce Directly to You</title>
-        <meta name="description" content="Golden Acres connects you with local farmers to bring fresh, quality produce directly to your doorstep. Explore our marketplace for a farm-to-table experience." />
+        <title>Agribridge - Fresh Farm Produce Directly to You</title>
+        <meta name="description" content="Agribridge connects you with local farmers to bring fresh, quality produce directly to your doorstep. Explore our marketplace for a farm-to-table experience." />
       </Helmet>
       <div className="space-y-24 pb-24 overflow-x-hidden">
         {/* Hero Section */}
@@ -54,7 +55,7 @@ const HomePage = () => {
                     className="text-lg md:text-xl text-gray-700 max-w-2xl mx-auto mb-8"
                     variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: "easeOut" } } }}
                 >
-                    Discover the freshest produce from Ghana's finest farmers. Golden Acres brings you closer to the source, ensuring quality, freshness, and community support.
+                    Discover the freshest produce from Ghana's finest farmers. Agribridge brings you closer to the source, ensuring quality, freshness, and community support.
                 </motion.p>
                 <motion.div 
                     className="flex justify-center gap-4"
@@ -84,7 +85,7 @@ const HomePage = () => {
             transition={{ duration: 0.6 }}
             className="text-center mb-12"
           >
-            <h2 className="text-4xl font-bold text-gray-800">Why Choose Golden Acres?</h2>
+            <h2 className="text-4xl font-bold text-gray-800">Why Choose Agribridge?</h2>
             <p className="text-lg text-gray-600 mt-2">The best way to experience farm-fresh goodness.</p>
           </motion.div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">

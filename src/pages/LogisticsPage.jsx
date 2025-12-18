@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
@@ -16,7 +17,7 @@ const LogisticsPage = () => {
   return (
     <>
       <Helmet>
-        <title>Logistics Services - Golden Acres</title>
+        <title>Logistics Services - Agribridge</title>
         <meta name="description" content="Learn about our efficient logistics, packaging, and delivery services that connect farms to your table." />
       </Helmet>
 
@@ -30,7 +31,7 @@ const LogisticsPage = () => {
           <div className="absolute inset-0 bg-gradient-to-r from-green-600/80 to-yellow-500/80 z-10"></div>
           <motion.img 
             className="absolute inset-0 w-full h-full object-cover" 
-            alt="Agrivil delivery truck on a road" 
+            alt="Agribridge delivery truck on a road" 
             src="https://images.unsplash.com/photo-1612977879188-a89c1f82b33b"
             initial={{ scale: 1.1 }}
             animate={{ scale: 1 }}
@@ -122,7 +123,7 @@ const LogisticsPage = () => {
                         <MapPin className="w-12 h-12 text-green-600 mb-4" />
                         <h2 className="text-4xl font-bold text-gray-900 mb-6">Our Coverage</h2>
                         <p className="text-lg text-gray-600 mb-4">
-                            Golden Acres' logistics network is constantly expanding. We currently serve major urban centers and are actively working to bring fresh produce to more communities across Ghana.
+                            Agribridge's logistics network is constantly expanding. We currently serve major urban centers and are actively working to bring fresh produce to more communities across Ghana.
                         </p>
                         <p className="text-lg text-gray-600">
                             Our strategically placed collection hubs ensure we can quickly gather produce from remote farms and begin the journey to your table without delay.

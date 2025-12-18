@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 import { useForm, FormProvider } from 'react-hook-form';
@@ -14,7 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, User, Lock, Mail, Phone, MapPin, Truck, Warehouse, Info, ChevronDown, CheckCircle, Sprout, Building, UserCheck, UserPlus, BadgeInfo as InfoIcon, ShieldCheck, Home, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Truck, Warehouse, Info, ChevronDown, CheckCircle, Sprout, UserCheck, UserPlus, ShieldCheck, Home, Eye, EyeOff, MapPin, Globe } from 'lucide-react';
 import { supabase } from '@/lib/customSupabaseClient';
 import countryData from '@/lib/countryData.json';
 
@@ -29,8 +30,10 @@ const baseSchema = z.object({
   phone_number: z.string().min(9, { message: "Valid phone number is required" }),
   gender: z.string().min(1, { message: "Please select a gender" }),
   date_of_birth: z.string().refine(val => new Date(val).toString() !== 'Invalid Date', { message: 'Please enter a valid date' }),
+  country: z.string().min(1, { message: "Country is required" }),
   region: z.string().min(1, { message: "Please select a region" }),
   city_town: z.string().min(2, { message: "City or town is required" }),
+  nearest_landmark: z.string().min(3, { message: "Nearest landmark is required" }),
 });
 
 const customerSchema = z.object({
@@ -45,6 +48,8 @@ const farmerSchema = z.object({
   farm_size: z.string().min(1, { message: "Farm size is required" }),
   farm_address: z.string().min(5, { message: "Farm address is required" }),
   main_products: z.string().min(3, { message: "Main products are required" }),
+  gps_location: z.string().optional(),
+  farming_experience: z.string().optional(),
 });
 
 const formSchema = z.discriminatedUnion("role", [
@@ -122,10 +127,11 @@ export default function RegisterPage() {
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [detectingLocation, setDetectingLocation] = useState(true);
 
     const methods = useForm({
         resolver: zodResolver(formSchema),
-        defaultValues: { role: 'customer', email: '', password: '', confirmPassword: '', full_name: '', phone_number: '', gender: '', date_of_birth: '', region: '', city_town: '', delivery_address: '', preferred_delivery_method: '', preferred_hub: '', national_id: '', farm_type: '', farm_size: '', farm_address: '', main_products: '' }
+        defaultValues: { role: 'customer', email: '', password: '', confirmPassword: '', full_name: '', phone_number: '', gender: '', date_of_birth: '', country: '', region: '', city_town: '', nearest_landmark: '', delivery_address: '', preferred_delivery_method: '', preferred_hub: '', national_id: '', farm_type: '', farm_size: '', farm_address: '', main_products: '', gps_location: '', farming_experience: '' }
     });
 
     const { register, handleSubmit, watch, setValue, formState: { errors } } = methods;
@@ -136,6 +142,35 @@ export default function RegisterPage() {
     const [hubs, setHubs] = useState([]);
     const [loadingHubs, setLoadingHubs] = useState(false);
     
+    // Auto-detect country
+    useEffect(() => {
+        const fetchCountry = async () => {
+            try {
+                // Using ipwho.is as it's a reliable free alternative that doesn't require API key for client-side
+                const response = await fetch('https://ipwho.is/');
+                const data = await response.json();
+                
+                if (data.success) {
+                    setValue('country', data.country, { shouldValidate: true });
+                    toast({ 
+                        title: "Location Detected", 
+                        description: `We've set your country to ${data.country}.`,
+                        duration: 3000
+                    });
+                } else {
+                    setValue('country', 'Ghana'); // Default fallback
+                }
+            } catch (error) {
+                console.error("Location detection failed:", error);
+                setValue('country', 'Ghana'); // Default fallback
+            } finally {
+                setDetectingLocation(false);
+            }
+        };
+
+        fetchCountry();
+    }, [setValue, toast]);
+
     useEffect(() => {
         if (role === 'customer' && deliveryMethod === 'Pickup' && selectedRegion) {
             setLoadingHubs(true);
@@ -152,11 +187,16 @@ export default function RegisterPage() {
         setLoading(true);
         try {
             const { email, password, ...metaData } = data;
-            const { error } = await signUp(email, password, metaData);
+            
+            const { error } = await signUp(email, password, {
+                data: metaData
+            });
+
             if (error) throw error;
             toast({ title: "Registration successful!", description: "Please check your email to verify your account." });
             navigate('/login');
         } catch (error) {
+            console.error(error);
             toast({ variant: 'destructive', title: 'Registration Failed', description: error.message });
         } finally {
             setLoading(false);
@@ -186,7 +226,7 @@ export default function RegisterPage() {
                         </div>
 
                         <AnimatePresence mode="wait">
-                            {deliveryMethod === 'Delivery' && <motion.div key="delivery-info" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="p-3 bg-blue-50 text-blue-800 border-l-4 border-blue-400 rounded-r-lg flex items-start gap-3 text-sm"><InfoIcon className="w-5 h-5 flex-shrink-0 mt-0.5"/><span>Home delivery may incur additional charges.</span></motion.div>}
+                            {deliveryMethod === 'Delivery' && <motion.div key="delivery-info" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="p-3 bg-blue-50 text-blue-800 border-l-4 border-blue-400 rounded-r-lg flex items-start gap-3 text-sm"><Info className="w-5 h-5 flex-shrink-0 mt-0.5"/><span>Home delivery may incur additional charges.</span></motion.div>}
                             {deliveryMethod === 'Pickup' && (
                                 <motion.div key="pickup-info" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-3">
                                     {loadingHubs && <div className="flex items-center justify-center gap-2 text-muted-foreground"><Loader2 className="w-4 h-4 animate-spin"/><span>Loading hubs...</span></div>}
@@ -229,14 +269,14 @@ export default function RegisterPage() {
     return (
         <>
             <Helmet>
-                <title>Register - Golden Acres</title>
+                <title>Register - Agribridge</title>
                 <meta name="description" content="Create an account to start shopping for fresh farm produce." />
             </Helmet>
             <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
                 <div className="w-full max-w-2xl">
                     <div className="text-center mb-8">
                         <Link to="/" className="inline-block mb-4">
-                          <img src="https://horizons-cdn.hostinger.com/1ff2a2eb-9cef-439f-b1c4-73368cb28fdf/dee3e90e0fad3a78c5aad3fa165b27b3.jpg" alt="Golden Acres Logo" className="h-24 w-24 rounded-full mx-auto shadow-md" />
+                          <img src="https://horizons-cdn.hostinger.com/1ff2a2eb-9cef-439f-b1c4-73368cb28fdf/dee3e90e0fad3a78c5aad3fa165b27b3.jpg" alt="Agribridge Logo" className="h-24 w-24 rounded-full mx-auto shadow-md" />
                         </Link>
                          <h1 className="text-4xl font-bold tracking-tight">Create an Account</h1>
                          <p className="text-muted-foreground mt-2">Join our community of fresh produce lovers.</p>
@@ -281,9 +321,8 @@ export default function RegisterPage() {
                                                 <SelectValue placeholder="Select Gender" />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="male">Male</SelectItem>
-                                                <SelectItem value="female">Female</SelectItem>
-                                                <SelectItem value="other">Other</SelectItem>
+                                                <SelectItem value="Male">Male</SelectItem>
+                                                <SelectItem value="Female">Female</SelectItem>
                                             </SelectContent>
                                         </Select>
                                         {errors.gender && <p className="text-red-500 text-xs mt-1">{errors.gender.message}</p>}
@@ -294,11 +333,16 @@ export default function RegisterPage() {
                             <Card>
                                 <CardHeader><CardTitle className="flex items-center text-xl"><MapPin className="mr-3 text-primary" /> Location Information</CardTitle></CardHeader>
                                 <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div>
+                                    <div className="md:col-span-2 relative">
+                                        <FloatingLabelInput name="country" label="Country" register={register} errors={errors} />
+                                        {detectingLocation && <Loader2 className="absolute right-3 top-3.5 h-5 w-5 animate-spin text-muted-foreground" />}
+                                    </div>
+                                    <div className="md:col-span-2">
                                       <RegionSelector value={selectedRegion} onSelect={(region) => setValue('region', region, { shouldValidate: true })} error={errors.region} />
                                       {errors.region && <p className="text-red-500 text-xs mt-1">{errors.region.message}</p>}
                                     </div>
                                     <FloatingLabelInput name="city_town" label="City / Town" register={register} errors={errors} />
+                                    <FloatingLabelInput name="nearest_landmark" label="Nearest Landmark" register={register} errors={errors} />
                                 </CardContent>
                             </Card>
 

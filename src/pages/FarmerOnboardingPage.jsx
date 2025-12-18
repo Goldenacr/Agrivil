@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
@@ -169,8 +170,8 @@ const FarmerOnboardingPage = () => {
   return (
     <>
       <Helmet>
-        <title>Farmer Onboarding - Golden Acres</title>
-        <meta name="description" content="Join Golden Acres as a farmer and sell your produce to a wider market." />
+        <title>Farmer Onboarding - Agribridge</title>
+        <meta name="description" content="Join Agribridge as a farmer and sell your produce to a wider market." />
       </Helmet>
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
         <motion.div
@@ -181,7 +182,7 @@ const FarmerOnboardingPage = () => {
         >
           <div className="flex justify-between items-center mb-4">
             <div></div> {/* Spacer for left alignment */}
-            <img className="mx-auto h-12 w-auto" alt="Golden Acres Logo" src="https://images.unsplash.com/photo-1689773132527-bcabdc88a395" />
+            <img className="mx-auto h-12 w-auto" alt="Agribridge Logo" src="https://horizons-cdn.hostinger.com/1ff2a2eb-9cef-439f-b1c4-73368cb28fdf/dee3e90e0fad3a78c5aad3fa165b27b3.jpg" />
             <Button asChild variant="outline" className="ml-auto"> {/* Adjusted positioning */}
                 <Link to="/">
                     <Home className="h-4 w-4 mr-2" />
@@ -189,7 +190,7 @@ const FarmerOnboardingPage = () => {
                 </Link>
             </Button>
           </div>
-          <h1 className="mt-6 text-center text-3xl font-extrabold text-gray-900">Become a Golden Acres Farmer</h1>
+          <h1 className="mt-6 text-center text-3xl font-extrabold text-gray-900">Become a Agribridge Farmer</h1>
           <p className="mt-2 text-center text-sm text-gray-600">
             Already have an account?{' '}
             <Link to="/login" className="font-medium text-primary hover:text-primary-dark">Sign in</Link>
