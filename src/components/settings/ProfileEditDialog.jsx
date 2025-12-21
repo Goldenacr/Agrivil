@@ -16,16 +16,38 @@ import { Loader2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
+import countryData from '@/lib/countryData.json';
 
 const ProfileEditDialog = ({ isOpen, onOpenChange, field, currentValue, onSave }) => {
-  const { user, fetchProfile } = useAuth();
+  const { user, profile, fetchProfile } = useAuth();
   const { toast } = useToast();
   const [value, setValue] = useState(currentValue);
   const [loading, setLoading] = useState(false);
+  const [phoneDialCode, setPhoneDialCode] = useState('');
+  const [phoneBody, setPhoneBody] = useState('');
 
   useEffect(() => {
     setValue(currentValue || '');
-  }, [currentValue, isOpen]);
+    
+    // Specifically handle phone numbers to split dial code if possible
+    if (field.type === 'tel' && currentValue) {
+        // Attempt to guess dial code from user's country if not explicit in string
+        const country = countryData.countries.find(c => c.name === profile?.country);
+        const code = country?.dial_code || '';
+        
+        if (currentValue.startsWith(code)) {
+            setPhoneDialCode(code);
+            setPhoneBody(currentValue.replace(code, '').trim());
+        } else {
+            setPhoneDialCode(code);
+            setPhoneBody(currentValue);
+        }
+    } else if (field.type === 'tel') {
+        const country = countryData.countries.find(c => c.name === profile?.country);
+        setPhoneDialCode(country?.dial_code || '');
+    }
+
+  }, [currentValue, isOpen, field.type, profile]);
 
   const handleSave = async () => {
     setLoading(true);
@@ -35,9 +57,14 @@ const ProfileEditDialog = ({ isOpen, onOpenChange, field, currentValue, onSave }
       return;
     }
 
+    let valueToSave = value;
+    if (field.type === 'tel') {
+        valueToSave = `${phoneDialCode} ${phoneBody}`.trim();
+    }
+
     const { error } = await supabase
       .from('profiles')
-      .update({ [field.name]: value })
+      .update({ [field.name]: valueToSave })
       .eq('id', user.id);
 
     if (error) {
@@ -52,8 +79,23 @@ const ProfileEditDialog = ({ isOpen, onOpenChange, field, currentValue, onSave }
 
   const renderField = () => {
     switch (field.type) {
-      case 'text':
       case 'tel':
+          return (
+            <div className="flex">
+                <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm min-w-[3.5rem] justify-center">
+                    {phoneDialCode || '+?'}
+                </span>
+                <Input 
+                    id={field.name} 
+                    type="tel" 
+                    className="rounded-l-none"
+                    value={phoneBody} 
+                    onChange={(e) => setPhoneBody(e.target.value)} 
+                    placeholder="123456789"
+                />
+            </div>
+          );
+      case 'text':
       case 'date':
         return <Input id={field.name} type={field.type} value={value} onChange={(e) => setValue(e.target.value)} />;
       case 'select':
