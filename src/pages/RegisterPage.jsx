@@ -4,7 +4,7 @@ import { Helmet } from 'react-helmet';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { useAuth } from '@/contexts/SupabaseAuthContext'; 
 import { useNavigate, Link } from 'react-router-dom';
 import { useToast } from '@/components/ui/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -294,7 +294,7 @@ export default function RegisterPage() {
                 <div className="w-full max-w-2xl">
                     <div className="text-center mb-8">
                         <Link to="/" className="inline-block mb-4">
-                          <img src="https://horizons-cdn.hostinger.com/1ff2a2eb-9cef-439f-b1c4-73368cb28fdf/dee3e90e0fad3a78c5aad3fa165b27b3.jpg" alt="Agribridge Logo" className="h-24 w-24 rounded-full mx-auto shadow-md" />
+                          <img src="https://zuctusbetucsmsywshyk.supabase.co/storage/v1/object/public/imgurl/81ospn_1766280462621.jpg" />
                         </Link>
                          <h1 className="text-4xl font-bold tracking-tight">Create an Account</h1>
                          <p className="text-muted-foreground mt-2">Join our community of fresh produce lovers.</p>
