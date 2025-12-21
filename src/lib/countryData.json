@@ -2,88 +2,51 @@
 {
   "countries": [
     { 
-      "code": "GH", 
-      "name": "Ghana", 
-      "dial_code": "+233", 
-      "phone_length": 10,
-      "regions": [
-        "Ahafo", "Ashanti", "Bono", "Bono East", "Central", "Eastern", 
-        "Greater Accra", "North East", "Northern", "Oti", "Savannah", 
-        "Upper East", "Upper West", "Volta", "Western", "Western North"
-      ]
+      "code": "GH", "name": "Ghana", "dial_code": "+233", "phone_length": 10,
+      "regions": ["Ahafo", "Ashanti", "Bono", "Bono East", "Central", "Eastern", "Greater Accra", "North East", "Northern", "Oti", "Savannah", "Upper East", "Upper West", "Volta", "Western", "Western North"],
+      "documents": { "ID Card": { "placeholder": "GHA-000000000-0", "regex": "^GHA-\\d{9}-\\d$", "label": "Ghana Card" }, "Passport": { "placeholder": "G0000000", "regex": "^[A-Z0-9]{5,10}$", "label": "Passport No." }, "Driver License": { "placeholder": "DD/MM/YY/0000", "regex": "^.{5,15}$", "label": "License No." } }
     },
     { 
-      "code": "NG", 
-      "name": "Nigeria", 
-      "dial_code": "+234", 
-      "phone_length": 11,
-      "regions": [
-        "Abia", "Adamawa", "Akwa Ibom", "Anambra", "Bauchi", "Bayelsa", "Benue", "Borno", 
-        "Cross River", "Delta", "Ebonyi", "Edo", "Ekiti", "Enugu", "Gombe", "Imo", "Jigawa", 
-        "Kaduna", "Kano", "Katsina", "Kebbi", "Kogi", "Kwara", "Lagos", "Nasarawa", "Niger", 
-        "Ogun", "Ondo", "Osun", "Oyo", "Plateau", "Rivers", "Sokoto", "Taraba", "Yobe", 
-        "Zamfara", "FCT - Abuja"
-      ]
+      "code": "NG", "name": "Nigeria", "dial_code": "+234", "phone_length": 11,
+      "regions": ["Lagos", "FCT - Abuja", "Rivers", "Kano", "Oyo", "Enugu", "Kaduna", "Ogun"],
+      "documents": { "ID Card": { "placeholder": "12345678901", "regex": "^\\d{11}$", "label": "NIN" }, "Passport": { "placeholder": "A00000000", "regex": "^[A-Z]{1}\\d{8}$", "label": "Passport No." }, "Driver License": { "placeholder": "ABC12345AA", "regex": "^[A-Z]{3}\\d{5}[A-Z]{2}$", "label": "License No." } }
     },
-    { 
-      "code": "CI", 
-      "name": "Côte d'Ivoire", 
-      "dial_code": "+225", 
-      "phone_length": 10,
-      "regions": [
-        "Abidjan", "Bas-Sassandra", "Comoé", "Denguélé", "Gôh-Djiboua", "Lacs", 
-        "Lagunes", "Montagnes", "Sassandra-Marahoué", "Savanes", "Vallée du Bandama", 
-        "Woroba", "Yamoussoukro", "Zanzan"
-      ]
-    },
-    { 
-      "code": "TG", 
-      "name": "Togo", 
-      "dial_code": "+228", 
-      "phone_length": 8,
-      "regions": ["Centrale", "Kara", "Maritime", "Plateaux", "Savanes"]
-    },
-    { 
-      "code": "BJ", 
-      "name": "Benin", 
-      "dial_code": "+229", 
-      "phone_length": 8,
-      "regions": ["Alibori", "Atakora", "Atlantique", "Borgou", "Collines", "Couffo", "Donga", "Littoral", "Mono", "Ouémé", "Plateau", "Zou"]
-    },
-    { 
-      "code": "BF", 
-      "name": "Burkina Faso", 
-      "dial_code": "+226", 
-      "phone_length": 8,
-      "regions": ["Boucle du Mouhoun", "Cascades", "Centre", "Centre-Est", "Centre-Nord", "Centre-Ouest", "Centre-Sud", "Est", "Hauts-Bassins", "Nord", "Plateau-Central", "Sahel", "Sud-Ouest"]
-    },
-    { 
-      "code": "US", 
-      "name": "United States", 
-      "dial_code": "+1", 
-      "phone_length": 10,
-      "regions": [
-        "Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado", "Connecticut", "Delaware", "Florida", "Georgia", 
-        "Hawaii", "Idaho", "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky", "Louisiana", "Maine", "Maryland", 
-        "Massachusetts", "Michigan", "Minnesota", "Mississippi", "Missouri", "Montana", "Nebraska", "Nevada", "New Hampshire", 
-        "New Jersey", "New Mexico", "New York", "North Carolina", "North Dakota", "Ohio", "Oklahoma", "Oregon", "Pennsylvania", 
-        "Rhode Island", "South Carolina", "South Dakota", "Tennessee", "Texas", "Utah", "Vermont", "Virginia", "Washington", 
-        "West Virginia", "Wisconsin", "Wyoming"
-      ]
-    },
-    { 
-      "code": "GB", 
-      "name": "United Kingdom", 
-      "dial_code": "+44", 
-      "phone_length": 11,
-      "regions": ["England", "Scotland", "Wales", "Northern Ireland"]
-    },
-    { 
-      "code": "CA", 
-      "name": "Canada", 
-      "dial_code": "+1", 
-      "phone_length": 10,
-      "regions": ["Alberta", "British Columbia", "Manitoba", "New Brunswick", "Newfoundland and Labrador", "Nova Scotia", "Ontario", "Prince Edward Island", "Quebec", "Saskatchewan"]
-    }
+    { "code": "US", "name": "United States", "dial_code": "+1", "phone_length": 10, "documents": { "ID Card": { "placeholder": "000-00-0000", "regex": "^\\d{9}$", "label": "SSN/State ID" }, "Passport": { "placeholder": "000000000", "regex": "^[0-9]{9}$", "label": "Passport No." }, "Driver License": { "placeholder": "A1234567", "regex": "^[A-Z0-9]{5,15}$", "label": "License No." } } },
+    { "code": "GB", "name": "United Kingdom", "dial_code": "+44", "phone_length": 10, "documents": { "ID Card": { "placeholder": "AA000000A", "regex": "^[A-Z]{2}\\d{6}[A-Z]$", "label": "NIN" }, "Passport": { "placeholder": "000000000", "regex": "^\\d{9}$", "label": "Passport No." }, "Driver License": { "placeholder": "ABCDE123456AB9CD", "regex": "^.{16}$", "label": "License No." } } },
+    { "code": "CA", "name": "Canada", "dial_code": "+1", "phone_length": 10, "documents": { "ID Card": { "placeholder": "000-000-000", "regex": "^\\d{9}$", "label": "SIN" }, "Passport": { "placeholder": "AA000000", "regex": "^[A-Z]{2}\\d{6}$", "label": "Passport No." }, "Driver License": { "placeholder": "A0000-00000-00000", "regex": "^[A-Z0-9-]{15,20}$", "label": "License No." } } },
+    { "code": "ZA", "name": "South Africa", "dial_code": "+27", "phone_length": 9, "documents": { "ID Card": { "placeholder": "0000000000000", "regex": "^\\d{13}$", "label": "RSA ID" }, "Passport": { "placeholder": "A00000000", "regex": "^[A-Z]\\d{8}$", "label": "Passport No." }, "Driver License": { "placeholder": "000000000000", "regex": "^[A-Z0-9]{10,15}$", "label": "License No." } } },
+    { "code": "KE", "name": "Kenya", "dial_code": "+254", "phone_length": 9, "documents": { "ID Card": { "placeholder": "00000000", "regex": "^\\d{7,9}$", "label": "National ID" }, "Passport": { "placeholder": "A0000000", "regex": "^[A-Z]\\d{7}$", "label": "Passport No." }, "Driver License": { "placeholder": "A000000", "regex": "^[A-Z0-9]{6,10}$", "label": "License No." } } },
+    { "code": "IN", "name": "India", "dial_code": "+91", "phone_length": 10, "documents": { "ID Card": { "placeholder": "0000 0000 0000", "regex": "^\\d{12}$", "label": "Aadhaar" }, "Passport": { "placeholder": "A0000000", "regex": "^[A-Z]\\d{7}$", "label": "Passport No." }, "Driver License": { "placeholder": "MH01 20230000000", "regex": "^[A-Z]{2}\\d{13,15}$", "label": "License No." } } },
+    { "code": "CN", "name": "China", "dial_code": "+86", "phone_length": 11, "documents": { "ID Card": { "placeholder": "000000000000000000", "regex": "^\\d{17}[0-9X]$", "label": "Resident ID" }, "Passport": { "placeholder": "E00000000", "regex": "^[A-Z]\\d{8}$", "label": "Passport No." }, "Driver License": { "placeholder": "000000000000000000", "regex": "^\\d{18}$", "label": "License No." } } },
+    { "code": "BR", "name": "Brazil", "dial_code": "+55", "phone_length": 11, "documents": { "ID Card": { "placeholder": "000.000.000-00", "regex": "^\\d{3}\\.\\d{3}\\.\\d{3}-\\d{2}$", "label": "CPF" }, "Passport": { "placeholder": "AB000000", "regex": "^[A-Z]{2}\\d{6}$", "label": "Passport No." }, "Driver License": { "placeholder": "00000000000", "regex": "^\\d{11}$", "label": "CNH" } } },
+    { "code": "DE", "name": "Germany", "dial_code": "+49", "phone_length": 11, "documents": { "ID Card": { "placeholder": "L00000000", "regex": "^[A-Z0-9]{9}$", "label": "Personalausweis" }, "Passport": { "placeholder": "C00000000", "regex": "^[A-Z0-9]{9}$", "label": "Reisepass" }, "Driver License": { "placeholder": "A00000000000", "regex": "^[A-Z0-9]{11}$", "label": "Führerschein" } } },
+    { "code": "FR", "name": "France", "dial_code": "+33", "phone_length": 9, "documents": { "ID Card": { "placeholder": "000000000000", "regex": "^\\d{12}$", "label": "CNI" }, "Passport": { "placeholder": "00AB00000", "regex": "^\\d{2}[A-Z]{2}\\d{5}$", "label": "Passeport" }, "Driver License": { "placeholder": "00AA00000", "regex": "^\\d{2}[A-Z]{2}\\d{5}$", "label": "Permis" } } },
+    { "code": "AU", "name": "Australia", "dial_code": "+61", "phone_length": 9, "documents": { "ID Card": { "placeholder": "000000000", "regex": "^\\d{9}$", "label": "Photo Card" }, "Passport": { "placeholder": "A0000000", "regex": "^[A-Z]\\d{7}$", "label": "Passport No." }, "Driver License": { "placeholder": "000000000", "regex": "^\\d{8,10}$", "label": "License No." } } },
+    { "code": "RW", "name": "Rwanda", "dial_code": "+250", "phone_length": 9, "documents": { "ID Card": { "placeholder": "1 1990 8 0000000 0 00", "regex": "^\\d{16}$", "label": "National ID" }, "Passport": { "placeholder": "PC000000", "regex": "^[A-Z]{2}\\d{6}$", "label": "Passport No." }, "Driver License": { "placeholder": "0000000000", "regex": "^\\d{10,16}$", "label": "License No." } } },
+    { "code": "UG", "name": "Uganda", "dial_code": "+256", "phone_length": 9, "documents": { "ID Card": { "placeholder": "CM000000000000", "regex": "^[A-Z0-9]{14}$", "label": "National ID" }, "Passport": { "placeholder": "A00000000", "regex": "^[A-Z]\\d{8}$", "label": "Passport No." }, "Driver License": { "placeholder": "00000000", "regex": "^\\d{8,12}$", "label": "License No." } } },
+    { "code": "TZ", "name": "Tanzania", "dial_code": "+255", "phone_length": 9, "documents": { "ID Card": { "placeholder": "00000000000000000000", "regex": "^\\d{20}$", "label": "NIDA" }, "Passport": { "placeholder": "AB000000", "regex": "^[A-Z]{2}\\d{6}$", "label": "Passport No." }, "Driver License": { "placeholder": "000000000", "regex": "^\\d{10}$", "label": "License No." } } },
+    { "code": "JP", "name": "Japan", "dial_code": "+81", "phone_length": 10, "documents": { "ID Card": { "placeholder": "000000000000", "regex": "^\\d{12}$", "label": "My Number" }, "Passport": { "placeholder": "AB0000000", "regex": "^[A-Z]{2}\\d{7}$", "label": "Passport No." }, "Driver License": { "placeholder": "000000000000", "regex": "^\\d{12}$", "label": "License No." } } },
+    { "code": "KR", "name": "South Korea", "dial_code": "+82", "phone_length": 10, "documents": { "ID Card": { "placeholder": "000000-0000000", "regex": "^\\d{6}-\\d{7}$", "label": "RRN" }, "Passport": { "placeholder": "M00000000", "regex": "^[A-Z]\\d{8}$", "label": "Passport No." }, "Driver License": { "placeholder": "00-00-000000-00", "regex": "^\\d{2}-\\d{2}-\\d{6}-\\d{2}$", "label": "License No." } } },
+    { "code": "MX", "name": "Mexico", "dial_code": "+52", "phone_length": 10, "documents": { "ID Card": { "placeholder": "AAAA000000HAAAAA00", "regex": "^[A-Z]{4}\\d{6}[HM][A-Z]{5}\\d{2}$", "label": "CURP" }, "Passport": { "placeholder": "000000000", "regex": "^\\d{9,11}$", "label": "Passport No." }, "Driver License": { "placeholder": "A000000000", "regex": "^[A-Z0-9]{8,10}$", "label": "License No." } } },
+    { "code": "ID", "name": "Indonesia", "dial_code": "+62", "phone_length": 11, "documents": { "ID Card": { "placeholder": "0000000000000000", "regex": "^\\d{16}$", "label": "KTP" }, "Passport": { "placeholder": "A0000000", "regex": "^[A-Z]\\d{7}$", "label": "Passport No." }, "Driver License": { "placeholder": "000000000000", "regex": "^\\d{12}$", "label": "SIM" } } },
+    { "code": "TR", "name": "Turkey", "dial_code": "+90", "phone_length": 10, "documents": { "ID Card": { "placeholder": "00000000000", "regex": "^\\d{11}$", "label": "TC Kimlik" }, "Passport": { "placeholder": "U00000000", "regex": "^[A-Z]\\d{8}$", "label": "Passport No." }, "Driver License": { "placeholder": "000000", "regex": "^\\d{6}$", "label": "License No." } } },
+    { "code": "ES", "name": "Spain", "dial_code": "+34", "phone_length": 9, "documents": { "ID Card": { "placeholder": "00000000A", "regex": "^\\d{8}[A-Z]$", "label": "DNI" }, "Passport": { "placeholder": "AAA000000", "regex": "^[A-Z]{3}\\d{6}$", "label": "Passport No." }, "Driver License": { "placeholder": "00000000A", "regex": "^\\d{8}[A-Z]$", "label": "Permiso" } } },
+    { "code": "IT", "name": "Italy", "dial_code": "+39", "phone_length": 10, "documents": { "ID Card": { "placeholder": "AA00000AA", "regex": "^[A-Z]{2}\\d{5}[A-Z]{2}$", "label": "C.I." }, "Passport": { "placeholder": "AA0000000", "regex": "^[A-Z]{2}\\d{7}$", "label": "Passport No." }, "Driver License": { "placeholder": "U12345678W", "regex": "^[A-Z0-9]{10}$", "label": "Patente" } } },
+    { "code": "RU", "name": "Russia", "dial_code": "+7", "phone_length": 10, "documents": { "ID Card": { "placeholder": "0000 000000", "regex": "^\\d{4}\\s\\d{6}$", "label": "Internal Passport" }, "Passport": { "placeholder": "00 0000000", "regex": "^\\d{2}\\s\\d{7}$", "label": "Passport No." }, "Driver License": { "placeholder": "00 AA 000000", "regex": "^\\d{2}\\s[A-Z]{2}\\s\\d{6}$", "label": "License No." } } },
+    { "code": "SA", "name": "Saudi Arabia", "dial_code": "+966", "phone_length": 9, "documents": { "ID Card": { "placeholder": "1000000000", "regex": "^\\d{10}$", "label": "National ID" }, "Passport": { "placeholder": "A0000000", "regex": "^[A-Z]\\d{7}$", "label": "Passport No." }, "Driver License": { "placeholder": "1000000000", "regex": "^\\d{10}$", "label": "License No." } } },
+    { "code": "EG", "name": "Egypt", "dial_code": "+20", "phone_length": 10, "documents": { "ID Card": { "placeholder": "00000000000000", "regex": "^\\d{14}$", "label": "National ID" }, "Passport": { "placeholder": "A00000000", "regex": "^[A-Z]\\d{8}$", "label": "Passport No." }, "Driver License": { "placeholder": "0000000", "regex": "^\\d{7,14}$", "label": "License No." } } },
+    { "code": "AE", "name": "United Arab Emirates", "dial_code": "+971", "phone_length": 9, "documents": { "ID Card": { "placeholder": "784-0000-0000000-0", "regex": "^784-\\d{4}-\\d{7}-\\d$", "label": "Emirates ID" }, "Passport": { "placeholder": "A0000000", "regex": "^[A-Z]\\d{7}$", "label": "Passport No." }, "Driver License": { "placeholder": "0000000", "regex": "^\\d{7,8}$", "label": "License No." } } },
+    { "code": "AR", "name": "Argentina", "dial_code": "+54", "phone_length": 10, "documents": { "ID Card": { "placeholder": "00.000.000", "regex": "^\\d{2}\\.\\d{3}\\.\\d{3}$", "label": "DNI" }, "Passport": { "placeholder": "AAA000000", "regex": "^[A-Z]{3}\\d{6}$", "label": "Passport No." }, "Driver License": { "placeholder": "00000000", "regex": "^\\d{8}$", "label": "License No." } } },
+    { "code": "CL", "name": "Chile", "dial_code": "+56", "phone_length": 9, "documents": { "ID Card": { "placeholder": "00.000.000-0", "regex": "^\\d{1,2}\\.\\d{3}\\.\\d{3}-[0-9Kk]$", "label": "RUT" }, "Passport": { "placeholder": "000000000", "regex": "^\\d{9}$", "label": "Passport No." }, "Driver License": { "placeholder": "00.000.000-0", "regex": "^\\d{1,2}\\.\\d{3}\\.\\d{3}-[0-9Kk]$", "label": "License No." } } },
+    { "code": "CO", "name": "Colombia", "dial_code": "+57", "phone_length": 10, "documents": { "ID Card": { "placeholder": "0000000000", "regex": "^\\d{6,10}$", "label": "Cédula" }, "Passport": { "placeholder": "AA000000", "regex": "^[A-Z]{2}\\d{6}$", "label": "Passport No." }, "Driver License": { "placeholder": "000000000000", "regex": "^\\d{10,12}$", "label": "License No." } } },
+    { "code": "NL", "name": "Netherlands", "dial_code": "+31", "phone_length": 9, "documents": { "ID Card": { "placeholder": "000000000", "regex": "^[A-Z0-9]{9}$", "label": "ID Card" }, "Passport": { "placeholder": "AA000000", "regex": "^[A-Z]{2}\\d{6}$", "label": "Passport No." }, "Driver License": { "placeholder": "0000000000", "regex": "^\\d{10}$", "label": "Rijbewijs" } } },
+    { "code": "SE", "name": "Sweden", "dial_code": "+46", "phone_length": 9, "documents": { "ID Card": { "placeholder": "YYMMDD-0000", "regex": "^\\d{6}-\\d{4}$", "label": "Personnummer" }, "Passport": { "placeholder": "00000000", "regex": "^\\d{8}$", "label": "Passport No." }, "Driver License": { "placeholder": "YYMMDD-0000", "regex": "^\\d{6}-\\d{4}$", "label": "Körkort" } } },
+    { "code": "CH", "name": "Switzerland", "dial_code": "+41", "phone_length": 9, "documents": { "ID Card": { "placeholder": "000 000 00000", "regex": "^\\d{3}\\s\\d{3}\\s\\d{5}$", "label": "ID Card" }, "Passport": { "placeholder": "X0000000", "regex": "^[A-Z]\\d{7}$", "label": "Passport No." }, "Driver License": { "placeholder": "000.000.000.000", "regex": "^\\d{3}\\.\\d{3}\\.\\d{3}\\.\\d{3}$", "label": "Führerausweis" } } },
+    { "code": "PL", "name": "Poland", "dial_code": "+48", "phone_length": 9, "documents": { "ID Card": { "placeholder": "AAA000000", "regex": "^[A-Z]{3}\\d{6}$", "label": "Dowód" }, "Passport": { "placeholder": "AA0000000", "regex": "^[A-Z]{2}\\d{7}$", "label": "Passport No." }, "Driver License": { "placeholder": "00000/00/0000", "regex": "^\\d{5}/\\d{2}/\\d{4}$", "label": "Prawo jazdy" } } },
+    { "code": "TH", "name": "Thailand", "dial_code": "+66", "phone_length": 9, "documents": { "ID Card": { "placeholder": "0-0000-00000-00-0", "regex": "^\\d-\\d{4}-\\d{5}-\\d{2}-\\d$", "label": "National ID" }, "Passport": { "placeholder": "AA0000000", "regex": "^[A-Z]{2}\\d{7}$", "label": "Passport No." }, "Driver License": { "placeholder": "00000000", "regex": "^\\d{8}$", "label": "License No." } } },
+    { "code": "VN", "name": "Vietnam", "dial_code": "+84", "phone_length": 9, "documents": { "ID Card": { "placeholder": "000000000000", "regex": "^\\d{12}$", "label": "CCCD" }, "Passport": { "placeholder": "C0000000", "regex": "^[A-Z]\\d{7}$", "label": "Passport No." }, "Driver License": { "placeholder": "000000000000", "regex": "^\\d{12}$", "label": "GPLX" } } },
+    { "code": "PH", "name": "Philippines", "dial_code": "+63", "phone_length": 10, "documents": { "ID Card": { "placeholder": "0000-0000-0000-0000", "regex": "^\\d{4}-\\d{4}-\\d{4}-\\d{4}$", "label": "PhilSys ID" }, "Passport": { "placeholder": "P0000000A", "regex": "^P\\d{7}[A-Z]$", "label": "Passport No." }, "Driver License": { "placeholder": "A00-00-000000", "regex": "^[A-Z]\\d{2}-\\d{2}-\\d{6}$", "label": "License No." } } },
+    { "code": "PK", "name": "Pakistan", "dial_code": "+92", "phone_length": 10, "documents": { "ID Card": { "placeholder": "00000-0000000-0", "regex": "^\\d{5}-\\d{7}-\\d$", "label": "CNIC" }, "Passport": { "placeholder": "AA0000000", "regex": "^[A-Z]{2}\\d{7}$", "label": "Passport No." }, "Driver License": { "placeholder": "AA00000", "regex": "^[A-Z]{2}\\d{5,10}$", "label": "License No." } } },
+    { "code": "BD", "name": "Bangladesh", "dial_code": "+880", "phone_length": 10, "documents": { "ID Card": { "placeholder": "000 000 0000", "regex": "^\\d{10,17}$", "label": "NID" }, "Passport": { "placeholder": "A00000000", "regex": "^[A-Z]\\d{8}$", "label": "Passport No." }, "Driver License": { "placeholder": "DK00000000", "regex": "^[A-Z]{2}\\d{8}$", "label": "License No." } } }
   ]
-    }
+}
