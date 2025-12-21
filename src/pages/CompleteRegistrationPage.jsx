@@ -357,7 +357,7 @@ export default function CompleteRegistrationPage() {
                                     </div>
                                     <div>
                                         <Select onValueChange={(value) => setValue('gender', value, { shouldValidate: true })}>
-                         <SelectTrigger className="h-12 text-base font-normal">
+                                            <SelectTrigger className="h-12 text-base font-normal">
                                                 <SelectValue placeholder="Select Gender" />
                                             </SelectTrigger>
                                             <SelectContent>

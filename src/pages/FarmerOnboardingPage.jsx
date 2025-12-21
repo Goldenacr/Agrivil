@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/select';
 import { motion } from 'framer-motion';
 import countryData from '@/lib/countryData.json';
-import { Home } from 'lucide-react'; // Added Home icon
+import { Home } from 'lucide-react'; 
 
 const FarmerOnboardingPage = () => {
   const [formData, setFormData] = useState({
@@ -28,6 +28,7 @@ const FarmerOnboardingPage = () => {
     age: '',
     phoneNumber: '',
     country: 'Ghana',
+    documentType: 'ID Card',
     nationalId: '',
     residentialAddress: '',
     region: '',
@@ -60,13 +61,20 @@ const FarmerOnboardingPage = () => {
         }
         break;
       case 'phoneNumber':
-        if (value && !/^\d{5,10}$/.test(value)) {
-          error = 'Phone number must be between 5 and 10 digits.';
+        // Basic length check, excluding the prefix which is handled separately
+        if (value && value.length < 5) {
+          error = 'Phone number is too short.';
         }
         break;
       case 'nationalId':
-        if (value && !/^GHA-\d{9}-\d$/.test(value)) {
-          error = 'ID format must be GHA-000000000-0.';
+        if (selectedCountry && selectedCountry.documents && formData.documentType) {
+            const rules = selectedCountry.documents[formData.documentType];
+            if (rules && rules.regex) {
+                const regex = new RegExp(rules.regex);
+                if (!regex.test(value)) {
+                    error = `Invalid format. Expected: ${rules.placeholder}`;
+                }
+            }
         }
         break;
       default:
@@ -83,7 +91,10 @@ const FarmerOnboardingPage = () => {
 
   const handleSelectChange = (name, value) => {
     setFormData(prev => ({ ...prev, [name]: value }));
-    validateField(name, value);
+    // Reset national ID if country changes or doc type changes
+    if (name === 'country' || name === 'documentType') {
+        validateField('nationalId', formData.nationalId); 
+    }
   };
 
   const handleCheckboxChange = (checked) => {
@@ -91,37 +102,38 @@ const FarmerOnboardingPage = () => {
   };
 
   const handleNationalIdChange = (e) => {
-    let value = e.target.value.toUpperCase();
-    // Basic masking logic
-    if (!value.startsWith('GHA-')) {
-        value = 'GHA-' + value.replace('GHA-', '');
-    }
-    value = value.replace(/[^A-Z0-9-]/g, '');
+    let value = e.target.value;
     
-    const parts = value.split('-');
-    if (parts.length > 1) {
-        parts[1] = parts[1].slice(0, 9);
+    // Auto-formatting for Ghana Card specifically
+    if (formData.country === 'Ghana' && formData.documentType === 'ID Card') {
+        value = value.toUpperCase();
+        if (!value.startsWith('GHA-')) {
+            value = 'GHA-' + value.replace('GHA-', '');
+        }
+        value = value.replace(/[^A-Z0-9-]/g, '');
+        
+        const parts = value.split('-');
+        if (parts.length > 1) {
+            parts[1] = parts[1].slice(0, 9);
+        }
+        if (parts.length > 2) {
+            parts[2] = parts[2].slice(0, 1);
+            value = `${parts[0]}-${parts[1]}-${parts[2]}`;
+        } else {
+            value = `${parts[0]}-${parts[1] || ''}`;
+        }
+        value = value.slice(0, 15);
     }
-    if (parts.length > 2) {
-        parts[2] = parts[2].slice(0, 1);
-        value = `${parts[0]}-${parts[1]}-${parts[2]}`;
-    } else {
-        value = `${parts[0]}-${parts[1] || ''}`;
-    }
-
-    setFormData(prev => ({ ...prev, nationalId: value.slice(0, 15) }));
+    
+    setFormData(prev => ({ ...prev, nationalId: value }));
     validateField('nationalId', value);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Re-validate all fields on submit
     let hasErrors = false;
-    Object.keys(formData).forEach(key => {
-        validateField(key, formData[key]);
-        if (errors[key]) hasErrors = true;
-    });
+    if (errors.nationalId || errors.age || errors.phoneNumber) hasErrors = true;
 
     if (hasErrors) {
         toast({ variant: "destructive", title: "Validation Error", description: "Please fix the errors before submitting." });
@@ -135,13 +147,19 @@ const FarmerOnboardingPage = () => {
 
     setLoading(true);
 
+    // Concatenate country code and phone number for storage
+    const formattedPhoneNumber = selectedCountry 
+        ? `${selectedCountry.dial_code} ${formData.phoneNumber}` 
+        : formData.phoneNumber;
+
     const { error } = await signUp(formData.email, formData.password, {
       data: {
         first_name: formData.firstName,
         last_name: formData.lastName,
         age: formData.age,
-        phone_number: formData.phoneNumber,
+        phone_number: formattedPhoneNumber,
         country: formData.country,
+        document_type: formData.documentType,
         national_id: formData.nationalId,
         residential_address: formData.residentialAddress,
         region: formData.region,
@@ -155,6 +173,8 @@ const FarmerOnboardingPage = () => {
         fda_certification_status: formData.fdaCertificationStatus,
         main_products: formData.mainProducts,
         role: 'farmer',
+        is_verified: false,
+        verification_status: 'pending' // Initial status
       },
     });
 
@@ -166,6 +186,8 @@ const FarmerOnboardingPage = () => {
     }
     setLoading(false);
   };
+  
+  const currentDocRules = selectedCountry?.documents?.[formData.documentType] || {};
 
   return (
     <>
@@ -181,9 +203,9 @@ const FarmerOnboardingPage = () => {
           className="sm:mx-auto sm:w-full sm:max-w-2xl"
         >
           <div className="flex justify-between items-center mb-4">
-            <div></div> {/* Spacer for left alignment */}
+            <div></div> 
             <img className="mx-auto h-12 w-auto" alt="Agribridge Logo" src="https://horizons-cdn.hostinger.com/1ff2a2eb-9cef-439f-b1c4-73368cb28fdf/dee3e90e0fad3a78c5aad3fa165b27b3.jpg" />
-            <Button asChild variant="outline" className="ml-auto"> {/* Adjusted positioning */}
+            <Button asChild variant="outline" className="ml-auto">
                 <Link to="/">
                     <Home className="h-4 w-4 mr-2" />
                     Home
@@ -208,23 +230,23 @@ const FarmerOnboardingPage = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <Label htmlFor="firstName">First Name</Label>
-                  <Input id="firstName" name="firstName" type="text" required value={formData.firstName} onChange={handleInputChange} />
+                  <Input id="firstName" name="firstName" type="text" required value={formData.firstName} onChange={handleInputChange} placeholder="John" />
                 </div>
                 <div>
                   <Label htmlFor="lastName">Last Name</Label>
-                  <Input id="lastName" name="lastName" type="text" required value={formData.lastName} onChange={handleInputChange} />
+                  <Input id="lastName" name="lastName" type="text" required value={formData.lastName} onChange={handleInputChange} placeholder="Doe" />
                 </div>
                 <div>
                   <Label htmlFor="email">Email Address</Label>
-                  <Input id="email" name="email" type="email" required value={formData.email} onChange={handleInputChange} />
+                  <Input id="email" name="email" type="email" required value={formData.email} onChange={handleInputChange} placeholder="name@example.com" />
                 </div>
                 <div>
                   <Label htmlFor="password">Password</Label>
-                  <Input id="password" name="password" type="password" required value={formData.password} onChange={handleInputChange} />
+                  <Input id="password" name="password" type="password" required value={formData.password} onChange={handleInputChange} placeholder="Create a password" />
                 </div>
                 <div>
                   <Label htmlFor="age">Age</Label>
-                  <Input id="age" name="age" type="number" required value={formData.age} onChange={handleInputChange} />
+                  <Input id="age" name="age" type="number" required value={formData.age} onChange={handleInputChange} placeholder="e.g. 25" />
                   {errors.age && <p className="text-red-500 text-xs mt-1">{errors.age}</p>}
                 </div>
                 <div>
@@ -245,41 +267,66 @@ const FarmerOnboardingPage = () => {
                 <div className="md:col-span-2">
                   <Label htmlFor="phoneNumber">Phone Number</Label>
                   <div className="flex">
-                    <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">
-                      {selectedCountry?.dial_code}
+                    <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm font-medium">
+                      {selectedCountry?.dial_code || '+00'}
                     </span>
-                    <Input id="phoneNumber" name="phoneNumber" type="tel" required className="rounded-l-none" value={formData.phoneNumber} onChange={handleInputChange} />
+                    <Input id="phoneNumber" name="phoneNumber" type="tel" required className="rounded-l-none" value={formData.phoneNumber} onChange={handleInputChange} placeholder="1234567890" />
                   </div>
                   {errors.phoneNumber && <p className="text-red-500 text-xs mt-1">{errors.phoneNumber}</p>}
                 </div>
-                <div className="md:col-span-2">
-                  <Label htmlFor="nationalId">National ID Number</Label>
-                  <Input id="nationalId" name="nationalId" type="text" placeholder="GHA-000000000-0" required value={formData.nationalId} onChange={handleNationalIdChange} />
-                  {errors.nationalId && <p className="text-red-500 text-xs mt-1">{errors.nationalId}</p>}
+
+                <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <Label htmlFor="documentType">Document Type</Label>
+                        <Select name="documentType" value={formData.documentType} onValueChange={(value) => handleSelectChange('documentType', value)}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select Document Type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="ID Card">National ID Card</SelectItem>
+                                <SelectItem value="Passport">Passport</SelectItem>
+                                <SelectItem value="Driver License">Driver's License</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="nationalId">{currentDocRules.label || "ID Number"}</Label>
+                      <Input 
+                        id="nationalId" 
+                        name="nationalId" 
+                        type="text" 
+                        placeholder={currentDocRules.placeholder || "Enter ID Number"} 
+                        required 
+                        value={formData.nationalId} 
+                        onChange={handleNationalIdChange} 
+                      />
+                      {errors.nationalId && <p className="text-red-500 text-xs mt-1">{errors.nationalId}</p>}
+                    </div>
                 </div>
+
                 <div className="md:col-span-2">
                   <Label htmlFor="residentialAddress">Residential Address</Label>
-                  <Input id="residentialAddress" name="residentialAddress" type="text" required value={formData.residentialAddress} onChange={handleInputChange} />
+                  <Input id="residentialAddress" name="residentialAddress" type="text" required value={formData.residentialAddress} onChange={handleInputChange} placeholder="House No., Street Name" />
                 </div>
                 <div>
                   <Label htmlFor="region">Region</Label>
-                  <Input id="region" name="region" type="text" required value={formData.region} onChange={handleInputChange} />
+                  <Input id="region" name="region" type="text" required value={formData.region} onChange={handleInputChange} placeholder="Region" />
                 </div>
                 <div>
                   <Label htmlFor="district">District</Label>
-                  <Input id="district" name="district" type="text" required value={formData.district} onChange={handleInputChange} />
+                  <Input id="district" name="district" type="text" required value={formData.district} onChange={handleInputChange} placeholder="District" />
                 </div>
                 <div className="md:col-span-2">
                   <Label htmlFor="farmAddress">Farm Address</Label>
-                  <Input id="farmAddress" name="farmAddress" type="text" required value={formData.farmAddress} onChange={handleInputChange} />
+                  <Input id="farmAddress" name="farmAddress" type="text" required value={formData.farmAddress} onChange={handleInputChange} placeholder="Plot No., Village/Town" />
                 </div>
                 <div>
                   <Label htmlFor="farmType">Type of Farm</Label>
-                  <Input id="farmType" name="farmType" type="text" required value={formData.farmType} onChange={handleInputChange} />
+                  <Input id="farmType" name="farmType" type="text" required value={formData.farmType} onChange={handleInputChange} placeholder="e.g. Poultry, Vegetable" />
                 </div>
                 <div>
                   <Label htmlFor="farmSize">Size of Farm (in acres)</Label>
-                  <Input id="farmSize" name="farmSize" type="text" required value={formData.farmSize} onChange={handleInputChange} />
+                  <Input id="farmSize" name="farmSize" type="text" required value={formData.farmSize} onChange={handleInputChange} placeholder="e.g. 5 acres" />
                 </div>
                 <div>
                   <Label htmlFor="gpsLocation">Farm GPS Location</Label>
@@ -287,7 +334,7 @@ const FarmerOnboardingPage = () => {
                 </div>
                 <div>
                   <Label htmlFor="farmingExperience">Farming Experience (in years)</Label>
-                  <Input id="farmingExperience" name="farmingExperience" type="number" required value={formData.farmingExperience} onChange={handleInputChange} />
+                  <Input id="farmingExperience" name="farmingExperience" type="number" required value={formData.farmingExperience} onChange={handleInputChange} placeholder="e.g. 5" />
                 </div>
                 <div>
                   <Label htmlFor="businessRegistrationStatus">Business Registration Status</Label>

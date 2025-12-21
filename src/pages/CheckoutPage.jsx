@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { Helmet } from 'react-helmet';
 import { useCart } from '@/hooks/useCart';
@@ -9,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { ShoppingCart, Trash2, ArrowLeft, Loader2, Home, Warehouse, Lock, CreditCard, MessageCircle, Truck, AlertCircle, Smartphone } from 'lucide-react';
+import { ShoppingCart, Trash2, ArrowLeft, Loader2, Home, Warehouse, CreditCard, MessageCircle, Truck, AlertCircle, Smartphone, Banknote, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/lib/customSupabaseClient';
@@ -19,7 +18,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
 
 const CheckoutPage = () => {
-    const { cartItems, removeFromCart, updateQuantity, handleWhatsAppCheckout, handlePaystackCheckout } = useCart();
+    const { cartItems, removeFromCart, updateQuantity, handleWhatsAppCheckout, handlePaystackCheckout, handlePayOnDeliveryCheckout } = useCart();
     const { user, profile, loading: authLoading } = useAuth();
     const navigate = useNavigate();
     const { toast } = useToast();
@@ -31,6 +30,7 @@ const CheckoutPage = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [pickupAvailable, setPickupAvailable] = useState(true);
     const [hubCheckLoading, setHubCheckLoading] = useState(false);
+    const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(null);
 
     useEffect(() => {
         if (!authLoading && !user) {
@@ -110,6 +110,8 @@ const CheckoutPage = () => {
     const isInternational = profile?.country && profile.country !== 'Ghana';
 
     const handleCheckout = async (method, channel = null) => {
+        setSelectedPaymentMethod(method);
+        
         if (!deliveryMethod) {
             toast({ variant: 'destructive', title: "Delivery method required", description: "Please select a delivery or pickup option."});
             return;
@@ -132,6 +134,8 @@ const CheckoutPage = () => {
 
         if (method === 'whatsapp') {
              await handleWhatsAppCheckout(deliveryDetails);
+        } else if (method === 'pay_on_delivery') {
+             await handlePayOnDeliveryCheckout(deliveryDetails);
         } else {
              await handlePaystackCheckout(deliveryDetails, channel);
         }
@@ -321,7 +325,7 @@ const CheckoutPage = () => {
                                                  <div className="bg-yellow-100 dark:bg-yellow-900/40 p-2.5 rounded-full w-fit mb-3">
                                                     <Smartphone className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
                                                  </div>
-                                          <h3 className="font-bold text-gray-900 dark:text-gray-100">Mobile Money</h3>
+                                                <h3 className="font-bold text-gray-900 dark:text-gray-100">Mobile Money</h3>
                                                 <p className="text-xs text-muted-foreground mt-1">MTN, Telecel, AT</p>
                                                 
                                                 {isInternational && (
@@ -332,17 +336,31 @@ const CheckoutPage = () => {
                                             </div>
                                         </div>
 
-                                        {/* Option 3: WhatsApp (Full Width) */}
+                                        {/* Option 3: WhatsApp */}
                                         <div 
-                                            className="md:col-span-2 p-5 border rounded-xl cursor-pointer hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 transition-all group flex items-center gap-4"
+                                            className="p-5 border rounded-xl cursor-pointer hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 transition-all group"
                                             onClick={() => handleCheckout('whatsapp')}
                                         >
-                                             <div className="bg-green-100 dark:bg-green-900/40 p-2.5 rounded-full shrink-0">
-                                                <MessageCircle className="h-6 w-6 text-green-600 dark:text-green-400" />
-                                             </div>
-                                             <div>
+                                             <div className="flex flex-col h-full">
+                                                <div className="bg-green-100 dark:bg-green-900/40 p-2.5 rounded-full w-fit mb-3">
+                                                    <MessageCircle className="h-6 w-6 text-green-600 dark:text-green-400" />
+                                                </div>
                                                 <h3 className="font-bold text-gray-900 dark:text-gray-100">WhatsApp Order</h3>
-                                                <p className="text-xs text-muted-foreground">Manual confirmation via WhatsApp chat</p>
+                                                <p className="text-xs text-muted-foreground mt-1">Order via chat</p>
+                                             </div>
+                                        </div>
+
+                                        {/* Option 4: Pay on Delivery */}
+                                        <div 
+                                            className="p-5 border rounded-xl cursor-pointer hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all group"
+                                            onClick={() => handleCheckout('pay_on_delivery')}
+                                        >
+                                             <div className="flex flex-col h-full">
+                                                <div className="bg-purple-100 dark:bg-purple-900/40 p-2.5 rounded-full w-fit mb-3">
+                                                    <Banknote className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                                                </div>
+                                                <h3 className="font-bold text-gray-900 dark:text-gray-100">Pay on Delivery</h3>
+                                                <p className="text-xs text-muted-foreground mt-1">Pay with Cash/Momo on arrival</p>
                                              </div>
                                         </div>
                                     </div>
@@ -379,4 +397,4 @@ const CheckoutPage = () => {
     );
 };
 
-export default CheckoutPage;
+export default CheckoutPage

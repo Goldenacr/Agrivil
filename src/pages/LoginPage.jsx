@@ -32,7 +32,7 @@ const GoogleIcon = () => (
     </svg>
 );
 
-const FloatingLabelInput = ({ id, label, type, value, onChange, disabled, showPassword, onTogglePassword }) => {
+const FloatingLabelInput = ({ id, label, type, value, onChange, disabled, showPassword, onTogglePassword, placeholder }) => {
     return (
         <div className="relative floating-input">
             <Input
@@ -43,6 +43,7 @@ const FloatingLabelInput = ({ id, label, type, value, onChange, disabled, showPa
                 required
                 className={`h-12 ${value ? 'has-value' : ''} ${type === 'password' ? 'pr-10' : ''}`}
                 disabled={disabled}
+                placeholder={placeholder}
             />
             <Label htmlFor={id}>{label}</Label>
             {type === 'password' && (
@@ -140,6 +141,7 @@ const LoginPage = () => {
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             disabled={loading}
+                            placeholder="name@example.com"
                         />
                         <div className="space-y-2">
                             <FloatingLabelInput
@@ -151,6 +153,7 @@ const LoginPage = () => {
                                 disabled={loading}
                                 showPassword={showPassword}
                                 onTogglePassword={() => setShowPassword(!showPassword)}
+                                placeholder="Enter your password"
                             />
                             <div className="flex justify-end">
                                 <Link 

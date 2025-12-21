@@ -1,26 +1,37 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useToast } from '@/components/ui/use-toast';
-import { Loader2, Package, ShoppingBag, ArrowRight, CheckCircle, Truck, Warehouse, Home as HomeIcon, ChevronDown, ChevronUp } from 'lucide-react';
+import { Loader2, Package, ShoppingBag, Truck, ChevronDown, Trash2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const getStatusStyles = (status) => {
-    switch (status) {
-        case 'Delivered': return "bg-green-100 text-green-800 border-green-200";
-        case 'Order Placed': return "bg-blue-100 text-blue-800 border-blue-200";
-        case 'Out for Delivery': return "bg-yellow-100 text-yellow-800 border-yellow-200";
-        case 'Cancelled': return "bg-red-100 text-red-800 border-red-200";
-        default: return "bg-gray-100 text-gray-800 border-gray-200";
-    }
+    const normalized = status?.toLowerCase() || '';
+    if (normalized === 'delivered') return "bg-green-100 text-green-800 border-green-200";
+    if (normalized === 'order placed') return "bg-blue-100 text-blue-800 border-blue-200";
+    if (normalized === 'out for delivery') return "bg-yellow-100 text-yellow-800 border-yellow-200";
+    if (normalized === 'cancelled') return "bg-red-100 text-red-800 border-red-200";
+    if (normalized === 'processing') return "bg-purple-100 text-purple-800 border-purple-200";
+    return "bg-gray-100 text-gray-800 border-gray-200";
 };
 
-const OrderCard = ({ order }) => {
+const OrderCard = ({ order, onDeleteRequest }) => {
     const [isDetailsVisible, setIsDetailsVisible] = useState(false);
 
     return (
@@ -30,14 +41,33 @@ const OrderCard = ({ order }) => {
                     <p className="font-semibold text-gray-800">Order <span className="font-mono text-primary">#{order.id.substring(0, 8)}</span></p>
                     <p className="text-sm text-gray-500">{new Date(order.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
                 </div>
-                <Badge variant="outline" className={`py-1 px-3 text-sm ${getStatusStyles(order.status)}`}>{order.status}</Badge>
+                <div className="flex items-center gap-2">
+                    <Badge variant="outline" className={`py-1 px-3 text-sm ${getStatusStyles(order.status)}`}>{order.status}</Badge>
+                    {(order.status === 'Cancelled' || order.status === 'Delivered') && (
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-gray-400 hover:text-red-500 hover:bg-red-50"
+                            onClick={(e) => { e.stopPropagation(); onDeleteRequest(order); }}
+                            title="Delete Order History"
+                        >
+                            <Trash2 className="h-4 w-4" />
+                        </Button>
+                    )}
+                </div>
             </CardHeader>
             <CardContent className="p-4">
                 <div className="flex justify-between items-center mb-4">
                     <div className="space-y-2">
                         {order.order_items.slice(0, 2).map(item => (
                             <div key={item.id} className="flex items-center gap-3">
-                                <img src={item.products?.image_url || 'https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=100'} alt={item.product_name} className="w-10 h-10 object-cover rounded-md border"/>
+                                {item.products?.image_url ? (
+                                    <img src={item.products.image_url} alt={item.product_name} className="w-10 h-10 object-cover rounded-md border"/>
+                                ) : (
+                                    <div className="w-10 h-10 bg-gray-100 rounded-md border flex items-center justify-center">
+                                        <Package className="w-5 h-5 text-gray-400"/>
+                                    </div>
+                                )}
                                 <div>
                                     <p className="text-sm font-medium text-gray-700">{item.product_name}</p>
                                     <p className="text-xs text-gray-500">Qty: {item.quantity}</p>
@@ -49,6 +79,9 @@ const OrderCard = ({ order }) => {
                     <div className="text-right">
                         <p className="text-gray-500 text-sm">Total</p>
                         <p className="font-bold text-xl text-gray-800">GHS {Number(order.total_amount).toLocaleString()}</p>
+                        <Badge variant="secondary" className="mt-1 text-xs">
+                            {order.payment_status || 'unpaid'}
+                        </Badge>
                     </div>
                 </div>
                 
@@ -85,7 +118,13 @@ const OrderCard = ({ order }) => {
                                           animate={{ opacity: 1, x: 0 }}
                                           transition={{ delay: i * 0.05 }}
                                         >
-                                            <img src={item.products?.image_url || 'https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=300'} alt={item.product_name} className="w-12 h-12 rounded-md object-cover border"/>
+                                            {item.products?.image_url ? (
+                                                <img src={item.products.image_url} alt={item.product_name} className="w-12 h-12 rounded-md object-cover border"/>
+                                            ) : (
+                                                 <div className="w-12 h-12 bg-gray-100 rounded-md border flex items-center justify-center">
+                                                    <Package className="w-6 h-6 text-gray-400"/>
+                                                </div>
+                                            )}
                                             <div>
                                                 <p className="font-semibold text-sm text-gray-800">{item.product_name}</p>
                                                 <p className="text-xs text-gray-600">Qty: {item.quantity} &times; GHS {Number(item.price).toLocaleString()}</p>
@@ -109,10 +148,12 @@ const MyOrdersPage = () => {
     const { toast } = useToast();
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [orderToDelete, setOrderToDelete] = useState(null);
 
-    const fetchOrders = useCallback(async () => {
+    const fetchOrders = useCallback(async (isInitial = false) => {
         if (!user) return;
-        setLoading(true);
+        if (isInitial) setLoading(true);
+        
         const { data, error } = await supabase
             .from('orders')
             .select(`
@@ -130,31 +171,68 @@ const MyOrdersPage = () => {
         } else {
             setOrders(data);
         }
-        setLoading(false);
+        if (isInitial) setLoading(false);
     }, [user, toast]);
+    
+    const handleDeleteOrder = async () => {
+        if(!orderToDelete) return;
+        
+        try {
+             // Ideally use the RPC 'delete_order_and_dependents'
+             const { error } = await supabase.rpc('delete_order_and_dependents', { order_id_to_delete: orderToDelete.id });
+             if (error) throw error;
+             
+             setOrders(orders.filter(o => o.id !== orderToDelete.id));
+             toast({ title: "Order Removed", description: "The order has been removed from your history." });
+             setOrderToDelete(null);
+        } catch (error) {
+             toast({ variant: 'destructive', title: "Delete Failed", description: error.message });
+        }
+    };
 
     useEffect(() => {
         if (!authLoading && !user) {
             navigate('/login');
         } else if (user) {
-            fetchOrders();
+            fetchOrders(true);
         }
     }, [user, authLoading, navigate, fetchOrders]);
 
+    // Real-time updates subscription
     useEffect(() => {
         if (!user) return;
-        
-        const orderChannel = supabase.channel('my-orders-page-channel')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `user_id=eq.${user.id}` }, payload => {
-                toast({ title: "Your orders have been updated!", description: `Order #${payload.new.id.substring(0, 8)} is now ${payload.new.status}` });
-                fetchOrders();
-            })
+
+        const channel = supabase.channel(`my_orders_page_${user.id}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: 'UPDATE',
+                    schema: 'public',
+                    table: 'orders',
+                    filter: `user_id=eq.${user.id}`
+                },
+                (payload) => {
+                     // Optimistically update the order in the list without re-fetching which causes spinner
+                     setOrders(currentOrders => currentOrders.map(order => {
+                        if (order.id === payload.new.id) {
+                            // Merge new data with existing order, preserving order_items which aren't in payload
+                            return { ...order, ...payload.new };
+                        }
+                        return order;
+                    }));
+                    
+                    toast({ 
+                        title: "Order Updated", 
+                        description: `Order #${payload.new.id.substring(0, 8)} status is now ${payload.new.status}` 
+                    });
+                }
+            )
             .subscribe();
 
         return () => {
-            supabase.removeChannel(orderChannel);
-        }
-    }, [user, fetchOrders, toast]);
+            supabase.removeChannel(channel);
+        };
+    }, [user, toast]);
 
     if (loading || authLoading) {
         return (
@@ -189,9 +267,10 @@ const MyOrdersPage = () => {
                                 key={order.id}
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
                                 transition={{ delay: index * 0.1 }}
                              >
-                                <OrderCard order={order} />
+                                <OrderCard order={order} onDeleteRequest={setOrderToDelete} />
                             </motion.div>
                         ))}
                     </AnimatePresence>
@@ -211,6 +290,21 @@ const MyOrdersPage = () => {
             )}
         </div>
       </div>
+      
+      <AlertDialog open={!!orderToDelete} onOpenChange={(open) => !open && setOrderToDelete(null)}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Delete Order History?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    This will remove the order record from your history. This action cannot be undone.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDeleteOrder} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };

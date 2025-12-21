@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
@@ -5,12 +6,15 @@ import { supabase } from '@/lib/customSupabaseClient';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
-import { Loader2, ArrowLeft, Package, CheckCircle, Truck, Home } from 'lucide-react'; // Added Home icon
+import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
+import { Loader2, ArrowLeft, Package, CheckCircle, Truck, Home, AlertCircle, Info } from 'lucide-react'; 
 import { motion } from 'framer-motion';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from '@/components/ui/badge';
 
 const statusIcons = {
     'Order Placed': <Package className="h-5 w-5 text-gray-500" />,
+    'Processing': <Loader2 className="h-5 w-5 text-purple-500" />,
     'Rider Dispatched to Farm': <Truck className="h-5 w-5 text-blue-500" />,
     'Products Picked Up': <Package className="h-5 w-5 text-yellow-500" />,
     'Out for Delivery': <Truck className="h-5 w-5 text-orange-500" />,
@@ -52,32 +56,74 @@ const OrderTrackingPage = () => {
         setLoading(false);
     }, [orderId, user, toast]);
     
+    // Helper to just fetch history silently
+    const refreshHistory = async () => {
+        const { data, error } = await supabase
+            .from('order_status_history')
+            .select('*')
+            .eq('order_id', orderId)
+            .order('created_at', { ascending: false });
+        
+        if (!error && data) {
+            setStatusHistory(data);
+        }
+    };
+    
     useEffect(() => {
         if (!authLoading) {
             fetchOrderData();
         }
     }, [authLoading, fetchOrderData]);
     
+    // Real-time updates subscription
     useEffect(() => {
         if (!orderId) return;
 
-        const channel = supabase.channel(`order_tracking:${orderId}`)
-            .on('postgres_changes', {
-                event: '*',
-                schema: 'public',
-                table: 'order_status_history',
-                filter: `order_id=eq.${orderId}`
-            }, (payload) => {
-                // Refetch all data to ensure consistency
-                fetchOrderData();
-                 toast({ title: "Order Status Updated!", description: `Your order is now: ${payload.new.status}` });
-            })
+        const channel = supabase.channel(`tracking_page_${orderId}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: 'UPDATE',
+                    schema: 'public',
+                    table: 'orders',
+                    filter: `id=eq.${orderId}`
+                },
+                (payload) => {
+                    // Update the order state with the new data
+                    setOrder(prev => ({ ...prev, ...payload.new }));
+                    
+                    // Fetch history immediately when order status updates to ensure consistency
+                    refreshHistory();
+                    
+                    toast({ 
+                        title: "Order Updated!", 
+                        description: `Status changed to: ${payload.new.status}` 
+                    });
+                }
+            )
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'order_status_history',
+                    filter: `order_id=eq.${orderId}`
+                },
+                (payload) => {
+                    // Prepend the new history entry if we receive it directly
+                    setStatusHistory(prev => {
+                        // Prevent duplicates just in case refreshHistory race condition adds it too
+                        if (prev.some(h => h.id === payload.new.id)) return prev;
+                        return [payload.new, ...prev];
+                    });
+                }
+            )
             .subscribe();
 
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [orderId, fetchOrderData, toast]);
+    }, [orderId, toast]);
 
     if (loading || authLoading) {
         return (
@@ -105,9 +151,9 @@ const OrderTrackingPage = () => {
             </Helmet>
             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
                 <div className="flex justify-between items-center mb-6">
-                    <Link to="/customer-dashboard">
+                    <Link to="/my-orders">
                         <Button variant="ghost">
-                            <ArrowLeft className="h-4 w-4 mr-2" /> Back to Dashboard
+                            <ArrowLeft className="h-4 w-4 mr-2" /> Back to Orders
                         </Button>
                     </Link>
                     <Button asChild variant="outline">
@@ -120,17 +166,57 @@ const OrderTrackingPage = () => {
 
                 <Card className="mb-8 bg-card/80 backdrop-blur-sm border">
                     <CardHeader>
-                        <CardTitle>Order #{order.id.substring(0, 8)}</CardTitle>
+                        <CardTitle className="flex justify-between items-center">
+                            <span>Order #{order.id.substring(0, 8)}</span>
+                            <Badge variant={order.payment_status === 'paid' ? 'success' : 'secondary'} className={order.payment_status === 'paid' ? 'bg-green-100 text-green-800' : ''}>
+                                {order.payment_status === 'paid' ? 'PAID' : 'UNPAID'}
+                            </Badge>
+                        </CardTitle>
                         <CardDescription>Placed on {new Date(order.created_at).toLocaleDateString()}</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <div className="flex items-center space-x-4">
-                            <Package className="h-10 w-10 text-primary"/>
-                            <div>
-                                <p className="text-lg font-semibold">{order.status}</p>
-                                <p className="text-sm text-gray-500">Total: GHS {order.total_amount}</p>
+                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                            <div className="flex items-center space-x-4">
+                                <div className="p-3 bg-primary/10 rounded-full">
+                                   {statusIcons[order.status] || <Package className="h-6 w-6 text-primary"/>}
+                                </div>
+                                <div>
+                                    <p className="text-lg font-semibold">{order.status}</p>
+                                    <p className="text-sm text-gray-500">Total: GHS {Number(order.total_amount).toFixed(2)}</p>
+                                </div>
+                            </div>
+                            
+                             <div className="flex flex-col items-end">
+                                <span className="text-sm font-medium text-gray-500">Payment Method</span>
+                                <span className="text-sm font-bold">{order.payment_method?.replace(/_/g, ' ').toUpperCase() || 'N/A'}</span>
                             </div>
                         </div>
+
+                        {order.payment_instructions && order.payment_status !== 'paid' && (
+                             <Alert className="mt-6 bg-blue-50 border-blue-200 pl-12 relative">
+                                <Info className="h-4 w-4 text-blue-600 absolute left-4 top-4" />
+                                <AlertTitle className="text-blue-800 font-bold mb-2">Payment Instructions</AlertTitle>
+                                <AlertDescription className="text-blue-700">
+                                    <div className="flex flex-col gap-1 text-sm">
+                                        <p>Please complete your payment via WhatsApp:</p>
+                                        <ul className="list-disc pl-4 space-y-1 mt-1">
+                                            <li>Send total amount to: <span className="font-bold">+233 533 811 757</span> (MTN MoMo)</li>
+                                            <li>Use Order ID <span className="font-mono font-bold">#{order.id.substring(0,8)}</span> as Reference</li>
+                                        </ul>
+                                    </div>
+                                </AlertDescription>
+                            </Alert>
+                        )}
+                        
+                        {order.payment_method === 'pay_on_delivery' && order.payment_status !== 'paid' && (
+                            <Alert className="mt-6 bg-purple-50 border-purple-200 pl-12 relative">
+                                <Truck className="h-4 w-4 text-purple-600 absolute left-4 top-4" />
+                                <AlertTitle className="text-purple-800 font-bold">Pay on Delivery</AlertTitle>
+                                <AlertDescription className="text-purple-700 mt-2">
+                                    Please have the exact amount of <span className="font-bold">GHS {Number(order.total_amount).toFixed(2)}</span> ready in cash or via mobile money when the rider arrives.
+                                </AlertDescription>
+                            </Alert>
+                        )}
                     </CardContent>
                 </Card>
 
