@@ -1,4 +1,13 @@
+
 import React, { useState } from 'react';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,17 +19,18 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Trash, Eye, MapPin } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 const OrdersTab = ({ orders, onStatusUpdate, onDelete }) => {
   const [selectedOrder, setSelectedOrder] = useState(null);
 
   const getStatusColor = (status) => {
-    switch (status) {
-      case 'Delivered': return 'bg-green-500 hover:bg-green-600';
-      case 'Cancelled': return 'bg-red-500 hover:bg-red-600';
-      case 'Out for Delivery': return 'bg-yellow-500 hover:bg-yellow-600';
-      case 'Order Placed': return 'bg-blue-500 hover:bg-blue-600';
+    switch (status?.toLowerCase()) {
+      case 'delivered': return 'bg-green-500 hover:bg-green-600';
+      case 'cancelled': return 'bg-red-500 hover:bg-red-600';
+      case 'out for delivery': return 'bg-yellow-500 hover:bg-yellow-600';
+      case 'processing': return 'bg-purple-500 hover:bg-purple-600';
+      case 'order placed': return 'bg-blue-500 hover:bg-blue-600';
       default: return 'bg-gray-500';
     }
   };
@@ -53,66 +63,48 @@ const OrdersTab = ({ orders, onStatusUpdate, onDelete }) => {
 
   return (
     <>
-    <div className="rounded-md border bg-white overflow-x-auto">
-      <div className="min-w-full">
-        {/* Table Header */}
-        <div className="grid grid-cols-7 gap-4 p-4 bg-gray-50 border-b font-medium">
-          <div>Order ID</div>
-          <div>Customer</div>
-          <div>Total</div>
-          <div>Status</div>
-          <div>Delivery Method</div>
-          <div>Date</div>
-          <div className="text-right">Actions</div>
-        </div>
-        
-        {/* Table Body */}
-        <div>
+    <div className="rounded-md border bg-white">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Order ID</TableHead>
+            <TableHead>Customer</TableHead>
+            <TableHead>Total</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Delivery Method</TableHead>
+            <TableHead>Date</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {orders.length === 0 ? (
-            <div className="p-8 text-center h-24 flex items-center justify-center">
-              No orders found.
-            </div>
+            <TableRow>
+              <TableCell colSpan={7} className="h-24 text-center">
+                No orders found.
+              </TableCell>
+            </TableRow>
           ) : (
             orders.map((order) => (
-              <div key={order.id} className="grid grid-cols-7 gap-4 p-4 border-b hover:bg-gray-50">
-                {/* Order ID */}
-                <div className="font-medium truncate">
-                  {order.id.substring(0, 8)}
-                </div>
-                
-                {/* Customer */}
-                <div>
+              <TableRow key={order.id}>
+                <TableCell className="font-medium">{order.id.substring(0, 8)}</TableCell>
+                <TableCell>
                   <div className="flex flex-col">
-                    <span className="font-medium truncate">{order.customer_name || 'Guest'}</span>
-                    <span className="text-xs text-muted-foreground truncate">{order.customer_phone || 'No phone'}</span>
+                    <span className="font-medium">{order.customer_name || 'Guest'}</span>
+                    <span className="text-xs text-muted-foreground">{order.customer_phone || 'No phone'}</span>
                   </div>
-                </div>
-                
-                {/* Total */}
-                <div>
-                  {formatPrice(order.total_amount)}
-                </div>
-                
-                {/* Status */}
-                <div>
+                </TableCell>
+                <TableCell>{formatPrice(order.total_amount)}</TableCell>
+                <TableCell>
                   <Badge className={getStatusColor(order.status)}>{order.status}</Badge>
-                </div>
-                
-                {/* Delivery Method */}
-                <div>
+                </TableCell>
+                <TableCell>
                    <div className="flex items-center gap-1 text-sm text-gray-600">
-                      <MapPin className="w-3 h-3 flex-shrink-0" />
-                      <span className="truncate">{getDeliveryDisplay(order)}</span>
+                      <MapPin className="w-3 h-3" />
+                      {getDeliveryDisplay(order)}
                    </div>
-                </div>
-                
-                {/* Date */}
-                <div>
-                  {new Date(order.created_at).toLocaleDateString()}
-                </div>
-                
-                {/* Actions */}
-                <div className="text-right">
+                </TableCell>
+                <TableCell>{new Date(order.created_at).toLocaleDateString()}</TableCell>
+                <TableCell className="text-right">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" className="h-8 w-8 p-0">
@@ -127,7 +119,7 @@ const OrdersTab = ({ orders, onStatusUpdate, onDelete }) => {
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuLabel>Update Status</DropdownMenuLabel>
-                      <DropdownMenuItem onClick={() => onStatusUpdate(order.id, 'Order Placed')}>Order Placed</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => onStatusUpdate(order.id, 'Processing')}>Processing</DropdownMenuItem>
                       <DropdownMenuItem onClick={() => onStatusUpdate(order.id, 'Out for Delivery')}>Out for Delivery</DropdownMenuItem>
                       <DropdownMenuItem onClick={() => onStatusUpdate(order.id, 'Delivered')}>Delivered</DropdownMenuItem>
                       <DropdownMenuItem onClick={() => onStatusUpdate(order.id, 'Cancelled')} className="text-red-600">Cancelled</DropdownMenuItem>
@@ -137,12 +129,12 @@ const OrdersTab = ({ orders, onStatusUpdate, onDelete }) => {
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
-                </div>
-              </div>
+                </TableCell>
+              </TableRow>
             ))
           )}
-        </div>
-      </div>
+        </TableBody>
+      </Table>
     </div>
 
     {/* Order Details Modal */}
@@ -168,28 +160,27 @@ const OrdersTab = ({ orders, onStatusUpdate, onDelete }) => {
                     
                     <div>
                         <h4 className="font-semibold mb-2">Order Items</h4>
-                        <div className="border rounded-md overflow-x-auto">
-                            <div className="min-w-full">
-                                {/* Items Table Header */}
-                                <div className="grid grid-cols-4 gap-4 p-3 bg-gray-50 border-b font-medium">
-                                    <div>Product</div>
-                                    <div>Farmer</div>
-                                    <div>Qty</div>
-                                    <div className="text-right">Price</div>
-                                </div>
-                                
-                                {/* Items Table Body */}
-                                <div>
+                        <div className="border rounded-md">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Product</TableHead>
+                                        <TableHead>Farmer</TableHead>
+                                        <TableHead>Qty</TableHead>
+                                        <TableHead className="text-right">Price</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
                                     {selectedOrder.order_items?.map((item, idx) => (
-                                        <div key={idx} className="grid grid-cols-4 gap-4 p-3 border-b hover:bg-gray-50">
-                                            <div>{item.product_name}</div>
-                                            <div>{item.farmer_name || 'N/A'}</div>
-                                            <div>{item.quantity}</div>
-                                            <div className="text-right">{formatPrice(item.price)}</div>
-                                        </div>
+                                        <TableRow key={idx}>
+                                            <TableCell>{item.product_name}</TableCell>
+                                            <TableCell>{item.farmer_name || 'N/A'}</TableCell>
+                                            <TableCell>{item.quantity}</TableCell>
+                                            <TableCell className="text-right">{formatPrice(item.price)}</TableCell>
+                                        </TableRow>
                                     ))}
-                                </div>
-                            </div>
+                                </TableBody>
+                            </Table>
                         </div>
                     </div>
                     
