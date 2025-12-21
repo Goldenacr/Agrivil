@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, memo, useCallback, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -84,7 +85,7 @@ const DropdownMenu = memo(({ profile, handleLogout }) => {
 
 
 const MobileMenu = ({ isOpen, setIsOpen, user, profile, handleLogout }) => {
-  const agribridgeLogoUrl = 'https://zuctusbetucsmsywshyk.supabase.co/storage/v1/object/public/imgurl/55nsof_1766016485551.jpg';
+  const agribridgeLogoUrl = '/vite.svg'; // User can update this URL
 
   const getDashboardLink = useCallback(() => {
     if (!profile) return '/login';
@@ -199,8 +200,8 @@ const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Updated logo URL to use your Supabase image
-  const agribridgeLogoUrl = 'https://zuctusbetucsmsywshyk.supabase.co/storage/v1/object/public/imgurl/55nsof_1766016485551.jpg';
+  // Define the logo URL here, making it easy to update
+  const agribridgeLogoUrl = '/vite.svg'; // This points to the file in the public folder
 
   useEffect(() => {
     setIsOpen(false);
