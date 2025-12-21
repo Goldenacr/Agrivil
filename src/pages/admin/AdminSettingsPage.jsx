@@ -27,7 +27,6 @@ const AdminSettingsPage = () => {
     setLoading2FAStatus(true);
     const { data, error } = await supabase.auth.mfa.listFactors();
     if (!error && data.totp && data.totp.length > 0) {
-      // Check if any factor is verified
       const hasVerifiedFactor = data.totp.some(factor => factor.status === 'verified');
       setIs2FAEnabled(hasVerifiedFactor);
     } else {
@@ -73,12 +72,14 @@ const AdminSettingsPage = () => {
     const originalValue = settings[key];
     setSettings(prev => ({...prev, [key]: value}));
 
+    // FIXED: Corrected the filter to use 'user_id' instead of 'user.id'
     const { error } = await supabase
         .from('admin_settings')
         .update({ [key]: value })
-        .eq('user.id', user.id);
+        .eq('user_id', user.id); 
 
     if (error) {
+        console.error("Update error:", error);
         toast({ variant: "destructive", title: "Failed to update setting", description: error.message });
         setSettings(prev => ({...prev, [key]: originalValue}));
     } else {
@@ -93,7 +94,6 @@ const AdminSettingsPage = () => {
     if (!is2FAEnabled) {
       setShow2FADialog(true);
     } else {
-      // Logic to disable 2FA
       const unenroll = async () => {
         const { data: factors, error: listError } = await supabase.auth.mfa.listFactors();
         if (listError || !factors.totp || factors.totp.length === 0) {
@@ -101,7 +101,6 @@ const AdminSettingsPage = () => {
           return;
         }
         
-        // Unenroll all verified factors to be safe
         let hasError = false;
         for (const factor of factors.totp) {
              const { error } = await supabase.auth.mfa.unenroll({ factorId: factor.id });

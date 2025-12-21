@@ -46,8 +46,22 @@ const AdminFarmersPage = () => {
     };
     
     const handleVerifyFarmer = async (farmerId) => {
-        const { error } = await supabase.from('profiles').update({ is_verified: true }).eq('id', farmerId);
+        const { error } = await supabase.from('profiles').update({ is_verified: true, verification_status: 'verified' }).eq('id', farmerId);
         handleApiResponse(error, 'Farmer verified!', 'Failed to verify farmer', () => fetchData(false));
+    };
+
+    const handleDeclineFarmer = async (farmerId) => {
+         // Use the database function delete_user_data via RPC to ensure all related data is removed
+         const { error } = await supabase.rpc('delete_user_data', { target_user_id: farmerId });
+         
+         // If that fails (e.g. function doesn't exist), try the edge function as fallback (if previously set up)
+         if (error) {
+             console.error("RPC delete failed, trying edge function...", error);
+             const { error: edgeError } = await supabase.functions.invoke('delete-user', { body: { userId: farmerId } });
+             handleApiResponse(edgeError, 'Farmer account removed.', 'Failed to remove farmer account.', () => fetchData(false));
+         } else {
+             handleApiResponse(null, 'Farmer account removed successfully.', 'Failed to remove farmer account.', () => fetchData(false));
+         }
     };
 
     return (
@@ -55,7 +69,7 @@ const AdminFarmersPage = () => {
             <Helmet><title>Manage Farmers - Admin</title></Helmet>
             <div className="py-8">
                 <h1 className="text-3xl font-bold tracking-tight mb-8">Manage Farmers</h1>
-                {loading ? <p>Loading farmers...</p> : <FarmersTab farmers={farmers} onVerify={handleVerifyFarmer} />}
+                {loading ? <p>Loading farmers...</p> : <FarmersTab farmers={farmers} onVerify={handleVerifyFarmer} onDecline={handleDeclineFarmer} />}
             </div>
         </>
     );

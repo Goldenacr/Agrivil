@@ -4,7 +4,7 @@ import { Helmet } from 'react-helmet';
 import { supabase } from '@/lib/customSupabaseClient';
 import { useToast } from '@/components/ui/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, ShoppingCart, BarChart, PenSquare, Tractor, Search, MapPin, PackageCheck } from 'lucide-react';
+import { Users, ShoppingCart, BarChart, PenSquare, Tractor, Search, MapPin, PackageCheck, Globe } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import SystemOverview from '@/components/admin/SystemOverview';
 import UsersTab from '@/components/admin/UsersTab';
@@ -14,12 +14,14 @@ import OrdersTab from '@/components/admin/OrdersTab';
 import BlogTab from '@/components/admin/BlogTab';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useBrowserNotification } from '@/hooks/useBrowserNotification';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Link } from 'react-router-dom';
 
 const AdminDashboard = () => {
     const { user: currentUser } = useAuth();
     const { toast } = useToast();
+    const { sendNotification, requestPermission, permission } = useBrowserNotification();
 
     const [data, setData] = useState({ users: [], products: [], orders: [], blogPosts: [], farmers: [] });
     const [loading, setLoading] = useState(true);
@@ -31,6 +33,16 @@ const AdminDashboard = () => {
     const [productSearchTerm, setProductSearchTerm] = useState('');
     const debouncedUserSearch = useDebounce(userSearchTerm, 300);
     const debouncedProductSearch = useDebounce(productSearchTerm, 300);
+    const [notificationSettings, setNotificationSettings] = useState({
+        notify_new_orders: false, 
+        notify_farmer_verification: false
+    });
+
+    const fetchNotificationSettings = useCallback(async () => {
+        if (!currentUser) return;
+        const { data } = await supabase.from('admin_settings').select('notify_new_orders, notify_farmer_verification').eq('user_id', currentUser.id).single();
+        if (data) setNotificationSettings(data);
+    }, [currentUser]);
 
     const fetchData = useCallback(async (showLoader = true) => {
         if (showLoader) setLoading(true);
@@ -55,13 +67,49 @@ const AdminDashboard = () => {
     }, []);
 
     useEffect(() => {
+        if (permission === 'default') {
+            requestPermission();
+        }
+    }, [permission, requestPermission]);
+
+    useEffect(() => {
         fetchData();
-        const channel = supabase.channel('admin-dashboard-realtime')
-            .on('postgres_changes', { event: '*', schema: 'public' }, () => fetchData(false))
+        fetchNotificationSettings();
+
+        const channel = supabase.channel('admin-realtime')
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, (payload) => {
+                // We re-fetch settings or rely on the effect dependency to update the closure
+                // For immediate reliability, we can also check the current ref if we used one, 
+                // but re-subscription via dependency array works for this scale.
+                if (notificationSettings.notify_new_orders) {
+                    sendNotification('New Order Received', { 
+                        body: `Order #${payload.new.id.slice(0,8)} has been placed worth GHS ${payload.new.total_amount}.`,
+                        tag: 'new-order'
+                    });
+                }
+                toast({ title: "New Order", description: `Order #${payload.new.id.slice(0,8)} received.` });
+                fetchData(false);
+            })
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'profiles' }, (payload) => {
+                if (payload.new.role === 'farmer' && !payload.new.is_verified) {
+                     if (notificationSettings.notify_farmer_verification) {
+                        sendNotification('New Farmer Registration', { 
+                            body: `${payload.new.full_name} registered and needs verification.`,
+                            tag: 'new-farmer'
+                        });
+                     }
+                     toast({ title: "New Farmer", description: `${payload.new.full_name} needs verification.` });
+                }
+                fetchData(false);
+            })
+             // Listen for ANY change to profiles to update lists if something else changes
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, () => fetchData(false))
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => fetchData(false))
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'blog_posts' }, () => fetchData(false))
             .subscribe();
 
         return () => supabase.removeChannel(channel);
-    }, [fetchData]);
+    }, [fetchData, fetchNotificationSettings, notificationSettings, requestPermission, sendNotification, toast, permission]);
 
     const filteredUsers = useMemo(() => {
         if (!debouncedUserSearch) return data.users;
@@ -109,7 +157,15 @@ const AdminDashboard = () => {
             toast({ variant: "destructive", title: "Action Forbidden", description: "You cannot remove your own admin role." });
             return;
         }
-        const { error } = await supabase.from('profiles').update({ role: newRole }).eq('id', userId);
+        
+        const updates = { role: newRole };
+        // When converting to farmer, ensure they are unverified so they must complete verification
+        if (newRole === 'farmer') {
+            updates.is_verified = false;
+            updates.verification_status = 'pending';
+        }
+
+        const { error } = await supabase.from('profiles').update(updates).eq('id', userId);
         handleApiResponse(error, 'User role updated', 'Failed to update role', () => fetchData(false));
     };
 
@@ -127,8 +183,26 @@ const AdminDashboard = () => {
     };
     
     const handleVerifyFarmer = async (farmerId) => {
-        const { error } = await supabase.from('profiles').update({ is_verified: true }).eq('id', farmerId);
+        const { error } = await supabase.from('profiles').update({ is_verified: true, verification_status: 'approved' }).eq('id', farmerId);
         handleApiResponse(error, 'Farmer verified!', 'Failed to verify farmer', () => fetchData(false));
+    };
+    
+    const handleDeclineFarmer = async (farmerId) => {
+        // 1. First, attempt to delete the verification documents from storage
+        try {
+            const { data: list } = await supabase.storage.from('product_images').list(`verification/${farmerId}`);
+            if (list && list.length > 0) {
+                const filesToRemove = list.map(x => `verification/${farmerId}/${x.name}`);
+                await supabase.storage.from('product_images').remove(filesToRemove);
+            }
+        } catch (err) {
+            console.error("Error deleting verification docs:", err);
+            // We continue to delete the user even if file deletion fails, to avoid orphan users
+        }
+
+        // 2. Then delete the user account
+         const { error } = await supabase.functions.invoke('delete-user', { body: { userId: farmerId } });
+         handleApiResponse(error, 'Farmer application declined and account removed.', 'Failed to decline application', () => fetchData(false));
     };
 
     // Product Management
@@ -157,7 +231,7 @@ const AdminDashboard = () => {
             </div>
             
             <Tabs defaultValue="overview">
-                 <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 md:grid-cols-8 mb-4">
+                 <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 md:grid-cols-9 mb-4">
                     <TabsTrigger value="overview"><BarChart className="h-4 w-4 mr-2" /> Overview</TabsTrigger>
                     <TabsTrigger value="users"><Users className="h-4 w-4 mr-2" /> Users</TabsTrigger>
                     <TabsTrigger value="farmers"><Tractor className="h-4 w-4 mr-2" /> Farmers</TabsTrigger>
@@ -165,6 +239,9 @@ const AdminDashboard = () => {
                     <TabsTrigger value="orders"><BarChart className="h-4 w-4 mr-2" /> Orders</TabsTrigger>
                     <TabsTrigger asChild>
                         <Link to="/admin-dashboard/mass-delivery" className="flex items-center justify-center"><PackageCheck className="h-4 w-4 mr-2" />Delivery</Link>
+                    </TabsTrigger>
+                     <TabsTrigger asChild>
+                        <Link to="/admin-dashboard/countries" className="flex items-center justify-center"><Globe className="h-4 w-4 mr-2" />Countries</Link>
                     </TabsTrigger>
                     <TabsTrigger value="blog"><PenSquare className="h-4 w-4 mr-2" /> Blog</TabsTrigger>
                     <TabsTrigger asChild>
@@ -184,7 +261,7 @@ const AdminDashboard = () => {
                             </div>
                             <UsersTab users={filteredUsers} currentUser={currentUser} onRoleUpdate={updateUserRole} onBan={handleBanUser} onDelete={(user) => confirmDelete(user, deleteUser)} />
                         </TabsContent>
-                        <TabsContent value="farmers"><FarmersTab farmers={data.farmers} onVerify={handleVerifyFarmer} /></TabsContent>
+                        <TabsContent value="farmers"><FarmersTab farmers={data.farmers} onVerify={handleVerifyFarmer} onDecline={handleDeclineFarmer}/></TabsContent>
                         <TabsContent value="products">
                             <div className="relative mb-4">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
