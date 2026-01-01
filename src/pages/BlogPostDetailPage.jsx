@@ -1,158 +1,147 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
 import { supabase } from '@/lib/customSupabaseClient';
-import { useToast } from '@/components/ui/use-toast';
-import { Loader2, ArrowLeft, Calendar, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowLeft, Calendar, User, Tag, Loader2, PlayCircle } from 'lucide-react';
+import { format } from 'date-fns';
 
 const BlogPostDetailPage = () => {
-  const { id } = useParams();
-  const { toast } = useToast();
-  const [post, setPost] = useState(null);
-  const [authorName, setAuthorName] = useState('Agribridge Admin');
-  const [loading, setLoading] = useState(true);
+    const { id } = useParams();
+    const [post, setPost] = useState(null);
+    const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchPost = async () => {
-      setLoading(true);
-      try {
-        const { data: postData, error: postError } = await supabase
-          .from('blog_posts')
-          .select('*')
-          .eq('id', id)
-          .single();
+    useEffect(() => {
+        const fetchPost = async () => {
+            const { data, error } = await supabase
+                .from('blog_posts')
+                .select(`
+                    *,
+                    author:author_id ( full_name, avatar_url )
+                `)
+                .eq('id', id)
+                .single();
 
-        if (postError) throw postError;
-        setPost(postData);
+            if (!error) {
+                setPost(data);
+            } else {
+                console.error("Error fetching post:", error);
+            }
+            setLoading(false);
+        };
 
-        if (postData.author_id) {
-          const { data: authorData, error: authorError } = await supabase
-            .from('profiles')
-            .select('full_name')
-            .eq('id', postData.author_id)
-            .single();
+        fetchPost();
+    }, [id]);
 
-          if (authorError) {
-            console.warn('Could not fetch author name:', authorError.message);
-          } else if (authorData) {
-            setAuthorName(authorData.full_name);
-          }
+    const getEmbedUrl = (url) => {
+        if (!url) return null;
+        
+        // Handle YouTube
+        const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+        const youtubeMatch = url.match(youtubeRegex);
+        if (youtubeMatch) {
+            return { type: 'iframe', src: `https://www.youtube.com/embed/${youtubeMatch[1]}` };
         }
-      } catch (error) {
-        toast({ variant: 'destructive', title: 'Failed to load post', description: error.message });
-      } finally {
-        setLoading(false);
-      }
+
+        // Handle Vimeo
+        const vimeoRegex = /(?:vimeo\.com\/)(\d+)/;
+        const vimeoMatch = url.match(vimeoRegex);
+        if (vimeoMatch) {
+            return { type: 'iframe', src: `https://player.vimeo.com/video/${vimeoMatch[1]}` };
+        }
+
+        // Assume direct file (Supabase storage or other direct link)
+        return { type: 'video', src: url };
     };
 
-    if (id) {
-      fetchPost();
-    }
-  }, [id, toast]);
+    if (loading) return <div className="flex items-center justify-center min-h-screen"><Loader2 className="w-8 h-8 animate-spin text-primary"/></div>;
+    if (!post) return <div className="text-center py-20"><h2 className="text-2xl font-bold">Post not found</h2><Link to="/blog" className="text-primary hover:underline mt-4 block">Back to Blog</Link></div>;
 
-  if (loading) {
+    const videoContent = post.video_url ? getEmbedUrl(post.video_url) : null;
+
     return (
-      <div className="flex justify-center items-center h-screen">
-        <Loader2 className="h-16 w-16 text-primary animate-spin" />
-      </div>
+        <>
+            <Helmet>
+                <title>{post.title} - Agribridge Blog</title>
+                <meta name="description" content={post.excerpt || post.title} />
+            </Helmet>
+
+            <div className="bg-background min-h-screen pb-12">
+                {/* Hero Image */}
+                <div className="w-full h-64 md:h-96 relative bg-gray-200">
+                    <img 
+                        src={post.image_url || "https://images.unsplash.com/photo-1500937386664-56d1dfef38ec?q=80&w=2070&auto=format&fit=crop"} 
+                        alt={post.title} 
+                        className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/40 flex items-end">
+                         <div className="container mx-auto px-4 pb-8 md:pb-12 text-white">
+                             <Button asChild variant="link" className="text-white/80 pl-0 hover:text-white mb-2">
+                                <Link to="/blog"><ArrowLeft className="w-4 h-4 mr-2" /> Back to Blog</Link>
+                            </Button>
+                            <h1 className="text-3xl md:text-5xl font-bold mb-4 leading-tight max-w-4xl">{post.title}</h1>
+                            <div className="flex flex-wrap items-center gap-4 text-sm md:text-base text-white/90">
+                                <span className="bg-primary px-3 py-1 rounded-full text-white font-medium text-xs md:text-sm">{post.category}</span>
+                                <div className="flex items-center gap-1"><Calendar className="w-4 h-4" /> {format(new Date(post.created_at), 'MMM dd, yyyy')}</div>
+                                {post.author && (
+                                    <div className="flex items-center gap-2">
+                                        <User className="w-4 h-4" />
+                                        <span>{post.author.full_name}</span>
+                                    </div>
+                                )}
+                            </div>
+                         </div>
+                    </div>
+                </div>
+
+                <div className="container mx-auto px-4 mt-8 md:mt-12 max-w-4xl">
+                    <div className="bg-white dark:bg-card p-6 md:p-10 rounded-xl shadow-sm border border-border">
+                        
+                        {/* Video Player Section */}
+                        {videoContent && (
+                            <div className="mb-10 rounded-xl overflow-hidden shadow-md bg-black">
+                                <div className="aspect-video w-full relative">
+                                    {videoContent.type === 'iframe' ? (
+                                        <iframe 
+                                            src={videoContent.src} 
+                                            title="Video player"
+                                            className="w-full h-full absolute inset-0" 
+                                            frameBorder="0" 
+                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                            allowFullScreen
+                                        ></iframe>
+                                    ) : (
+                                        <video 
+                                            controls 
+                                            className="w-full h-full absolute inset-0"
+                                            poster={post.image_url} // Use blog cover as poster
+                                        >
+                                            <source src={videoContent.src} type="video/mp4" />
+                                            <source src={videoContent.src} type="video/webm" />
+                                            Your browser does not support the video tag.
+                                        </video>
+                                    )}
+                                </div>
+                                <div className="p-3 bg-muted/30 text-xs text-center text-muted-foreground flex items-center justify-center gap-2">
+                                    <PlayCircle className="w-4 h-4"/> Video Content Available
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="prose dark:prose-invert max-w-none prose-lg prose-headings:font-bold prose-a:text-primary">
+                            {post.content.split('\n').map((paragraph, idx) => (
+                                <p key={idx} className="mb-4 text-gray-700 dark:text-gray-300 leading-relaxed">
+                                    {paragraph}
+                                </p>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </>
     );
-  }
-
-  if (!post) {
-    return (
-      <div className="text-center py-20">
-        <h2 className="text-2xl font-semibold text-gray-700">Post not found.</h2>
-        <Button asChild className="mt-4">
-          <Link to="/blog">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Blog
-          </Link>
-        </Button>
-      </div>
-    );
-  }
-
-  return (
-    <>
-      <Helmet>
-        <title>{`${post.title} - Agribridge Blog`}</title>
-        <meta name="description" content={post.excerpt} />
-      </Helmet>
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <motion.div 
-            initial={{ opacity: 0, y: 20 }} 
-            animate={{ opacity: 1, y: 0 }} 
-            transition={{ staggerChildren: 0.1 }}
-        >
-          <div className="mb-8">
-            <Button asChild variant="ghost">
-              <Link to="/blog">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to all posts
-              </Link>
-            </Button>
-          </div>
-
-          <article>
-            <motion.div variants={{hidden: {opacity: 0, y: 20}, visible: {opacity: 1, y: 0}}} initial="hidden" animate="visible" transition={{delay: 0.1}}>
-              <span className="text-primary font-semibold">{post.category}</span>
-            </motion.div>
-            <motion.h1 
-              className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-4"
-              variants={{hidden: {opacity: 0, y: 20}, visible: {opacity: 1, y: 0}}} initial="hidden" animate="visible" transition={{ delay: 0.2 }}
-            >
-              {post.title}
-            </motion.h1>
-
-            <motion.div 
-              className="flex items-center space-x-4 text-sm text-gray-500 mb-6"
-              variants={{hidden: {opacity: 0, y: 20}, visible: {opacity: 1, y: 0}}} initial="hidden" animate="visible" transition={{ delay: 0.3 }}
-            >
-              <div className="flex items-center">
-                <User className="w-4 h-4 mr-1.5" />
-                <span>{authorName}</span>
-              </div>
-              <div className="flex items-center">
-                <Calendar className="w-4 h-4 mr-1.5" />
-                <span>{new Date(post.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
-              </div>
-            </motion.div>
-            
-            <AnimatePresence>
-            {post.image_url && (
-              <motion.div 
-                className="w-full h-auto max-h-[500px] object-cover rounded-2xl shadow-lg mb-8 overflow-hidden"
-                initial={{ opacity: 0, height: 0 }} 
-                animate={{ opacity: 1, height: 'auto' }} 
-                transition={{ delay: 0.4, duration: 0.7, ease: "easeInOut" }}
-              >
-                  <motion.img 
-                    src={post.image_url} 
-                    alt={post.title} 
-                    className="w-full h-full object-cover"
-                    initial={{ scale: 1.1 }}
-                    animate={{ scale: 1 }}
-                    transition={{ delay: 0.6, duration: 1 }}
-                  />
-              </motion.div>
-            )}
-            </AnimatePresence>
-
-            <motion.div 
-              className="prose lg:prose-xl max-w-none"
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
-            >
-              <p className="text-lg italic text-gray-600 mb-8">{post.excerpt}</p>
-              <div dangerouslySetInnerHTML={{ __html: post.content.replace(/\n/g, '<br />') }} />
-            </motion.div>
-          </article>
-        </motion.div>
-      </div>
-    </>
-  );
 };
 
 export default BlogPostDetailPage;
+          
